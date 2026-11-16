@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dnsinspector"
+version = "0.1.0"
+description = "DNS diagnostics and email/DNSSEC security auditing tool"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [{ name = "Abdel" }]
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "dnspython[dnssec]>=2.6",
+    "fpdf2>=2.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6"]
+
+[project.scripts]
+dnsinspector = "dnsinspector.main:run"
+
+[tool.setuptools.packages.find]
+include = ["dnsinspector*"]
+
+[tool.setuptools.package-data]
+dnsinspector = ["static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
