@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest -q
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and start
+        run: docker compose up -d --build
+      - name: Wait for health check
+        run: |
+          for i in $(seq 1 30); do
+            curl -fs http://127.0.0.1:8000/api/health && exit 0
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+      - name: Smoke test (real DNS)
+        run: |
+          curl -fs -X POST http://127.0.0.1:8000/api/analyses \
+            -H 'content-type: application/json' \
+            -d '{"domain": "example.com"}' -o analysis.json
+          python3 -c "import json; d = json.load(open('analysis.json')); print(d['id'], d['summary']); assert d['records']['NS']['status'] == 'ok'"
+          curl -fs -o report.pdf http://127.0.0.1:8000/api/analyses/1/report.pdf
+          head -c 5 report.pdf | grep -q '%PDF-'
+      - name: Stop
+        if: always()
+        run: docker compose down -v

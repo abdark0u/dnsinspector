@@ -1,0 +1,18 @@
+services:
+  dnsinspector:
+    build: .
+    image: dnsinspector:latest
+    ports:
+      # solo en localhost; poner un proxy delante si se publica
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_PATH: /data/dnsinspector.db
+    volumes:
+      - dnsinspector-data:/data
+    restart: unless-stopped
+
+volumes:
+  dnsinspector-data:
