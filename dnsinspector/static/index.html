@@ -1,3 +1,84 @@
 <!doctype html>
-<title>DNSInspector</title>
-<p>DNSInspector API is running. See <a href="/api/docs">/api/docs</a>.</p>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DNSInspector</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/analyze">
+      <img src="favicon.svg" alt="" width="20" height="20">
+      <span>DNSInspector</span>
+    </a>
+    <nav class="tabs" aria-label="Main">
+      <a href="#/analyze" data-tab="analyze">Analyze</a>
+      <a href="#/lookup" data-tab="lookup">Lookup</a>
+      <a href="#/history" data-tab="history">History</a>
+    </nav>
+    <a class="api-link" href="/api/docs" target="_blank" rel="noopener">API</a>
+  </header>
+
+  <main id="app">
+    <section id="view-analyze" class="view" hidden>
+      <form id="analyze-form" class="toolbar" novalidate>
+        <label class="field grow">
+          <span>Domain</span>
+          <input id="analyze-domain" name="domain" placeholder="example.com" autocomplete="off"
+                 spellcheck="false" required maxlength="253">
+        </label>
+        <label class="field">
+          <span>DKIM selectors <small>(optional, comma separated)</small></span>
+          <input id="analyze-selectors" name="selectors" placeholder="google, s1" autocomplete="off"
+                 spellcheck="false" maxlength="300">
+        </label>
+        <button type="submit" class="btn primary">Run analysis</button>
+      </form>
+      <p class="form-error" id="analyze-error" role="alert" hidden></p>
+      <div id="analysis-result"></div>
+    </section>
+
+    <section id="view-lookup" class="view" hidden>
+      <form id="lookup-form" class="toolbar" novalidate>
+        <label class="field grow">
+          <span>Domain or public IP (PTR)</span>
+          <input id="lookup-name" placeholder="example.com or 8.8.8.8" autocomplete="off"
+                 spellcheck="false" required maxlength="253">
+        </label>
+        <label class="field">
+          <span>Type</span>
+          <select id="lookup-type">
+            <option>ALL</option><option>A</option><option>AAAA</option><option>MX</option>
+            <option>CNAME</option><option>TXT</option><option>NS</option><option>SOA</option>
+          </select>
+        </label>
+        <button type="submit" class="btn primary">Query</button>
+      </form>
+      <p class="form-error" id="lookup-error" role="alert" hidden></p>
+      <div id="lookup-result"></div>
+    </section>
+
+    <section id="view-history" class="view" hidden>
+      <form id="history-form" class="toolbar" novalidate>
+        <label class="field grow">
+          <span>Filter by domain</span>
+          <input id="history-domain" placeholder="example.com" autocomplete="off" spellcheck="false">
+        </label>
+        <button type="submit" class="btn">Filter</button>
+        <button type="button" class="btn primary" id="compare-btn" disabled>Compare selected</button>
+      </form>
+      <p class="form-error" id="history-error" role="alert" hidden></p>
+      <div id="history-result"></div>
+    </section>
+
+    <section id="view-detail" class="view" hidden></section>
+  </main>
+
+  <footer class="footer">
+    Non-intrusive DNS diagnostics. Only public DNS data is queried.
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
