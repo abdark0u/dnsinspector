@@ -101,3 +101,14 @@ def test_dns_error_is_reported_not_guessed():
     status, findings = run({("example.com", "TXT"): dns.exception.Timeout})
     assert status["status"] == "error"
     assert ids(findings) == {"SPF-000"}
+
+
+def test_include_dns_failure_is_not_a_config_error():
+    data = {
+        ("example.com", "TXT"): ['"v=spf1 include:flaky.com -all"'],
+        ("flaky.com", "TXT"): dns.exception.Timeout,
+    }
+    status, findings = run(data)
+    assert ids(findings) == {"SPF-013"}
+    assert status["unchecked_includes"] == ["flaky.com: timeout"]
+    assert status["status"] == "ok"

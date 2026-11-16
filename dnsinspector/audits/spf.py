@@ -79,7 +79,11 @@ def count_lookups(
     state = state if state is not None else {"count": 0, "errors": [], "chain": []}
     visited.add(domain)
     txt = engine.query(domain, "TXT")
-    records = find_spf_records(txt.records) if txt.status == OK else []
+    if txt.status not in (OK, NODATA, NXDOMAIN):
+        # un fallo de red no es un error de configuracion, lo apuntamos aparte
+        state.setdefault("unchecked", []).append(f"{domain}: {txt.status}")
+        return state
+    records = find_spf_records(txt.records)
     if len(records) != 1:
         state["errors"].append(f"{domain}: {'no' if not records else 'multiple'} SPF record")
         return state
@@ -201,6 +205,7 @@ def audit_spf(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
     lookups = count_lookups(engine, domain)
     status["lookup_count"] = lookups["count"]
     status["include_chain"] = lookups["chain"]
+    status["unchecked_includes"] = lookups.get("unchecked", [])
     nested_errors = [e for e in lookups["errors"] if not e.startswith(f"{domain}:")]
     if lookups["count"] > LOOKUP_LIMIT:
         findings.append(
@@ -228,6 +233,18 @@ def audit_spf(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
                 "Review includes before adding new senders.",
                 CATEGORY,
                 f"{REF} section 4.6.4",
+            )
+        )
+    if status["unchecked_includes"]:
+        findings.append(
+            Finding(
+                "SPF-013",
+                Severity.INFO,
+                "Some SPF includes could not be resolved",
+                "DNS queries for these includes failed, so the lookup count is a lower bound.",
+                "\n".join(status["unchecked_includes"]),
+                "Run the analysis again later.",
+                CATEGORY,
             )
         )
     if nested_errors:
