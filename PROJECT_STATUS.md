@@ -1,6 +1,6 @@
 # Project status
 
-_Last updated: 2026-11-16_
+_Last updated: 2026-11-17_
 
 ## Current phase
 
@@ -53,7 +53,7 @@ Each stage ends with tests passing, a CHANGELOG entry and a push.
 | 2 | Per-authoritative-server checks (SOA serial consistency, lame delegation) | New DNS-0xx findings with tests using fake servers |
 | 3 | MTA-STS and TLS-RPT records | New audit module + dashboard card |
 | 4 | Full DNSSEC chain validation from the root | Tests with a signed parent/child test hierarchy |
-| 5 | CLI mode (`dnsinspector check example.com --json`) | CLI tests, README section |
+| 5 | CLI mode (`dnsinspector check example.com --json`) | **Done 2026-11-17**: `tests/test_cli.py`, README section |
 | 6 | Release v0.2.0 | Tag, GitHub release, CI green |
 
 ## How to resume

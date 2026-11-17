@@ -169,6 +169,17 @@ pytest
 `google` for Google Workspace or `selector1, selector2` for Microsoft 365. You can find the
 selector in the `s=` field of the `DKIM-Signature` header of an email sent by the domain.
 
+**Command line** (no server needed):
+
+```bash
+dnsinspector check example.com -s google        # readable summary
+dnsinspector check example.com --json           # full JSON report
+dnsinspector check example.com --fail-on high   # exit code 1 if High or Critical findings
+```
+
+Exit codes: `0` ok, `1` findings at or above `--fail-on`, `2` invalid input. Running
+`dnsinspector` with no command starts the web app (same as `dnsinspector serve`).
+
 **API**:
 
 ```bash
@@ -272,7 +283,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 - Checks against each authoritative name server (consistency, lame delegation, SOA serials).
 - MTA-STS, TLS-RPT and BIMI record checks.
 - Probing a list of common DKIM selectors (opt-in).
-- CLI mode for scripted audits.
 - Optional authentication for multi-user deployments.
 
 ## License
