@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- DMARC fallback now uses the Public Suffix List (`publicsuffix2`), so `mail.example.co.uk`
+  falls back to `example.co.uk` instead of `co.uk`.
 - Command line mode: `dnsinspector check <domain>` with `--selector`, `--json` and
   `--fail-on` (exit code 1 when findings reach that severity), for scripts and CI.
 

@@ -30,7 +30,7 @@ recursive resolver. No port scans, no zone transfers, no access to private netwo
 - **DKIM**: for the selectors you provide, queries `<selector>._domainkey.<domain>`,
   validates the tag structure, decodes the public key and reports the real RSA key size
   (or Ed25519), revoked keys and test mode. It never claims a signature is valid.
-- **DMARC**: queries `_dmarc.<domain>` (falling back to the parent domain for subdomains),
+- **DMARC**: queries `_dmarc.<domain>` (falling back to the organizational domain, computed with the Public Suffix List),
   parses `v, p, sp, rua, ruf, pct, adkim, aspf`, detects syntax errors, duplicate records,
   `p=none`, `sp=none`, `pct<100`, missing or invalid report URIs.
 
@@ -247,8 +247,8 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
 - **DKIM**: selectors cannot be discovered through DNS, so only the selectors you provide
   are checked. A valid key record does not prove that mail is signed correctly; that needs
   a real signed message.
-- **DMARC** organizational domain fallback uses the last two labels instead of the Public
-  Suffix List, so it is inaccurate for domains such as `example.co.uk`. External report
+- **DMARC** organizational domain uses the Public Suffix List bundled with the
+  `publicsuffix2` package, which can be slightly out of date. External report
   destination authorization (RFC 7489 section 7.1) is not checked.
 - **SPF**: macros (e.g. `%{i}`) cannot be expanded without a real message, so includes
   that use them are counted but not followed. The "void lookup" limit is not checked.
@@ -279,7 +279,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 ## Roadmap
 
 - Full DNSSEC chain validation from the root and NSEC/NSEC3 checks.
-- Public Suffix List support for DMARC organizational domains.
 - Checks against each authoritative name server (consistency, lame delegation, SOA serials).
 - MTA-STS, TLS-RPT and BIMI record checks.
 - Probing a list of common DKIM selectors (opt-in).

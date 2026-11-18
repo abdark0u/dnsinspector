@@ -1,6 +1,6 @@
 # Project status
 
-_Last updated: 2026-11-17_
+_Last updated: 2026-11-18_
 
 ## Current phase
 
@@ -39,8 +39,7 @@ history reflects that real order of work; no dates were changed.
 
 ## Pending / known issues
 
-- Limitations listed in the README (partial DNSSEC validation, DMARC org domain without
-  Public Suffix List, in-memory rate limiter, no authentication, Latin-1 PDF fonts).
+- Limitations listed in the README (partial DNSSEC validation, in-memory rate limiter, no authentication, Latin-1 PDF fonts).
 - Starlette warns that its test client will move from `httpx` to `httpx2`; harmless today.
 
 ## Next stages (plan, not done yet)
@@ -49,7 +48,7 @@ Each stage ends with tests passing, a CHANGELOG entry and a push.
 
 | Stage | Goal | Verifiable result |
 |---|---|---|
-| 1 | Public Suffix List for DMARC org domain | `sub.example.co.uk` falls back to `example.co.uk`; tests |
+| 1 | Public Suffix List for DMARC org domain | **Done 2026-11-18**: `tests/test_dmarc.py` |
 | 2 | Per-authoritative-server checks (SOA serial consistency, lame delegation) | New DNS-0xx findings with tests using fake servers |
 | 3 | MTA-STS and TLS-RPT records | New audit module + dashboard card |
 | 4 | Full DNSSEC chain validation from the root | Tests with a signed parent/child test hierarchy |

@@ -60,6 +60,7 @@ the history view filters and sorts by.
 | SPF syntax, 10 lookup limit, multiple records = permerror | RFC 7208 (sections 3.2, 4.6.4, 5) |
 | DKIM key record tags | RFC 6376 section 3.6.1, RFC 8301 (RSA >= 1024, 2048 recommended), RFC 8463 (Ed25519) |
 | DMARC tags and policy discovery | RFC 7489 sections 6.3 and 6.6.3 |
+| DMARC organizational domain | RFC 7489 section 3.2, Public Suffix List |
 | DNSSEC records, DS digest, AD bit | RFC 4033, RFC 4034, RFC 4035, RFC 6840 |
 
 ## Key decisions
@@ -67,6 +68,7 @@ the history view filters and sorts by.
 | Decision | Alternative | Reason |
 |---|---|---|
 | Synchronous dnspython in FastAPI sync endpoints | `dns.asyncresolver` | FastAPI runs sync endpoints in a thread pool; an analysis is ~15 queries, so async adds complexity with no visible gain. |
+| `publicsuffix2` for the Public Suffix List | Fetching the list at runtime, `tldextract` | Ships the list inside the package, so analysis stays offline and deterministic; tiny, pure Python. The list can go stale until the package is updated. |
 | `fpdf2` for PDF | ReportLab, WeasyPrint | Pure Python, no system libraries, small API. |
 | Own in-memory rate limiter | `slowapi` | ~20 lines, no extra dependency. Single-process only (documented). |
 | stdlib `sqlite3` | SQLAlchemy | One table, a handful of queries. |
