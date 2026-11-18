@@ -1,5 +1,7 @@
 """Auditoria DMARC (RFC 7489)."""
 
+from publicsuffix2 import get_sld
+
 from dnsinspector.audits import parse_tag_list
 from dnsinspector.dns_engine import NODATA, NXDOMAIN, OK, DnsEngine
 from dnsinspector.findings import Finding, Severity
@@ -76,11 +78,9 @@ def audit_dmarc(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
         )
         return status, findings
 
-    labels = domain.split(".")
-    if not records and len(labels) > 2:
-        # shortcut: dominio organizativo = ultimas dos etiquetas, sin Public Suffix List.
-        # falla con cosas tipo example.co.uk; usar la PSL si hace falta mas precision
-        org = ".".join(labels[-2:])
+    # dominio organizativo segun la Public Suffix List (lista incluida, sin red)
+    org = get_sld(domain) or domain
+    if not records and org != domain:
         _, records, _ = _lookup(engine, org)
         if records:
             status["source"] = f"_dmarc.{org}"

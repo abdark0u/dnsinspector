@@ -85,3 +85,18 @@ def test_dns_failure_is_not_reported_as_missing():
     status, findings = audit_dmarc(DnsEngine(resolver=FakeResolver(data)), "example.com")
     assert status["status"] == "error"
     assert ids(findings) == {"DMARC-000"}
+
+
+def test_org_domain_uses_public_suffix_list():
+    # con la PSL, example.co.uk es el dominio organizativo (no co.uk)
+    extra = {("_dmarc.example.co.uk", "TXT"): [f'"v=DMARC1; p=reject; {RUA}"']}
+    status, findings = run(None, domain="mail.example.co.uk", extra=extra)
+    assert status["inherited"] is True
+    assert status["source"] == "_dmarc.example.co.uk"
+    assert findings == []
+
+
+def test_two_label_fallback_still_works():
+    extra = {("_dmarc.example.com", "TXT"): [f'"v=DMARC1; p=reject; {RUA}"']}
+    status, _ = run(None, domain="a.b.example.com", extra=extra)
+    assert status["source"] == "_dmarc.example.com"

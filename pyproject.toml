@@ -15,6 +15,7 @@ dependencies = [
     "uvicorn>=0.30",
     "dnspython[dnssec]>=2.6",
     "fpdf2>=2.8",
+    "publicsuffix2>=2.2019",
 ]
 
 [project.optional-dependencies]
