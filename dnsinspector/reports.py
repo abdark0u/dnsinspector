@@ -13,7 +13,13 @@ SEVERITY_COLORS = {
     "low": (29, 78, 216),
     "info": (75, 85, 99),
 }
-AUDITS = (("SPF", "spf"), ("DKIM", "dkim"), ("DMARC", "dmarc"), ("DNSSEC", "dnssec"))
+AUDITS = (
+    ("Name servers", "nameservers"),
+    ("SPF", "spf"),
+    ("DKIM", "dkim"),
+    ("DMARC", "dmarc"),
+    ("DNSSEC", "dnssec"),
+)
 
 
 def to_json(report: dict) -> bytes:
@@ -93,6 +99,17 @@ def to_pdf(report: dict) -> bytes:
         pdf.line_text(f"{rtype}  [{result['status']}]  {ttl}", size=10, style="B")
         values = result["records"] or [result.get("error") or "-"]
         pdf.line_text("\n".join(values), size=8, mono=True)
+
+    servers = report.get("nameservers", {}).get("servers", [])
+    if servers:
+        pdf.heading("Authoritative name servers")
+        for server in servers:
+            detail = server.get("serial") or server.get("error") or server.get("rcode") or ""
+            pdf.line_text(
+                f"{server['ns']} ({server['ip'] or '-'}): {server['status']} {detail}",
+                size=8,
+                mono=True,
+            )
 
     pdf.heading("Notes")
     pdf.line_text(

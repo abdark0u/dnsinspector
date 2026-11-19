@@ -239,6 +239,9 @@ function renderReport(r) {
   <h2>DNS records</h2>
   ${recordsTable(Object.values(r.records))}
 
+  <h2>Authoritative name servers <small>(${esc(r.nameservers?.status || "not checked")})</small></h2>
+  ${nameserversTable(r.nameservers)}
+
   <p class="note">${esc(r.dkim?.note || "")} ${esc(r.dnssec?.note || "")}</p>`;
 }
 
@@ -253,6 +256,23 @@ function recordsTable(results) {
   </tr>`).join("");
   return `<div class="table-wrap"><table>
     <thead><tr><th>Type</th><th>Status</th><th>Values</th><th>TTL</th><th>Server</th><th>Time</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+// tabla con la respuesta de cada servidor autoritativo
+function nameserversTable(ns) {
+  if (!ns?.servers?.length) return `<p class="note">Name servers were not checked in this analysis.</p>`;
+  const cls = (status) => (status === "ok" ? "status-ok" : status === "not_checked" ? "status-nodata" : "status-error");
+  const rows = ns.servers.map((s) => `<tr>
+    <td class="mono">${esc(s.ns)}</td>
+    <td class="mono">${esc(s.ip || "—")}</td>
+    <td class="${cls(s.status)}">${esc(s.status.replace("_", " "))}</td>
+    <td class="values">${esc(s.serial ?? s.error ?? (s.rcode ? `${s.rcode}, AA=${s.aa ? 1 : 0}` : "—"))}</td>
+    <td class="values">${esc(s.primary || "—")}</td>
+    <td class="num">${s.elapsed_ms != null ? `${esc(s.elapsed_ms)} ms` : "—"}</td>
+  </tr>`).join("");
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>Name server</th><th>Address</th><th>Status</th><th>SOA serial</th><th>Primary</th><th>Time</th></tr></thead>
     <tbody>${rows}</tbody></table></div>`;
 }
 
