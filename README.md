@@ -19,6 +19,10 @@ recursive resolver. No port scans, no zone transfers, no access to private netwo
 **DNS lookup**
 - A, AAAA, MX, CNAME, TXT, NS and SOA records, plus PTR for public IP addresses.
 - TTL, answering resolver and response time for every query.
+- Each authoritative name server is asked for the SOA directly (no recursion) to detect
+  lame delegations, unresponsive servers and SOA serial mismatches. Serials are only
+  compared between servers that share the same SOA primary, so multi-provider setups
+  are not flagged. Name servers with non-public addresses are never queried.
 - Each query is classified as `ok`, `nodata` (name exists, no record of that type),
   `nxdomain` (name does not exist), `timeout` or `error` (SERVFAIL, refused, ...).
 
@@ -252,8 +256,8 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
   destination authorization (RFC 7489 section 7.1) is not checked.
 - **SPF**: macros (e.g. `%{i}`) cannot be expanded without a real message, so includes
   that use them are counted but not followed. The "void lookup" limit is not checked.
-- Results come from a recursive resolver, so they can be cached (see the TTL). Lame
-  delegations and inconsistencies between authoritative servers are not detected.
+- Record results come from a recursive resolver, so they can be cached (see the TTL).
+  Name server checks only use IPv4 and at most 6 name servers with 2 addresses each.
 - The rate limiter is in-memory and per process. Run a single worker, or rate-limit at a
   reverse proxy.
 - PDF reports use the built-in PDF fonts (Latin-1); other characters are replaced by `?`.
@@ -279,7 +283,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 ## Roadmap
 
 - Full DNSSEC chain validation from the root and NSEC/NSEC3 checks.
-- Checks against each authoritative name server (consistency, lame delegation, SOA serials).
 - MTA-STS, TLS-RPT and BIMI record checks.
 - Probing a list of common DKIM selectors (opt-in).
 - Optional authentication for multi-user deployments.

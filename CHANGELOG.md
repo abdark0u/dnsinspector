@@ -7,6 +7,9 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Authoritative name server checks: each NS is queried directly for the SOA to detect
+  lame delegations (DNS-006), unresponsive servers (DNS-007) and SOA serial mismatches
+  (DNS-008). Shown in the dashboard, PDF report and history comparison.
 - DMARC fallback now uses the Public Suffix List (`publicsuffix2`), so `mail.example.co.uk`
   falls back to `example.co.uk` instead of `co.uk`.
 - Command line mode: `dnsinspector check <domain>` with `--selector`, `--json` and
