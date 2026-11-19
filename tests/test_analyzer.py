@@ -14,6 +14,9 @@ GOOD_ZONE = {
     ("example.com", "SOA"): ["ns1.example.com. admin.example.com. 1 7200 3600 1209600 300"],
     ("example.com", "TXT"): ['"v=spf1 mx -all"'],
     ("_dmarc.example.com", "TXT"): ['"v=DMARC1; p=reject; rua=mailto:d@example.com"'],
+    # IPs de documentacion: no son publicas, asi que no se les manda nada
+    ("ns1.example.com", "A"): ["192.0.2.53"],
+    ("ns2.example.net", "A"): ["198.51.100.53"],
 }
 
 
@@ -35,6 +38,7 @@ def test_full_report_structure():
     assert report["dmarc"]["status"] == "ok"
     assert report["dkim"]["status"] == "not_checked"
     assert report["dnssec"]["status"] == "unsigned"
+    assert report["nameservers"]["status"] == "not_checked"
     assert ids(report) == ["DNSSEC-001", "DKIM-001"]
     assert report["summary"]["highest_severity"] == "low"
     assert report["duration_ms"] >= 0

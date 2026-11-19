@@ -28,6 +28,9 @@ so the same configuration always gets the same result.
 | DNS-003 | Info | Domain does not accept mail (null MX) |
 | DNS-004 | Info | No MX records |
 | DNS-005 | Info | No IPv6 address (AAAA) |
+| DNS-006 | Medium | Lame delegation (listed NS does not answer authoritatively, or its name does not resolve) |
+| DNS-007 | Medium | Name server not responding (timeout/network error) |
+| DNS-008 | Low | SOA serial differs between name servers with the same primary |
 | SPF-000 | Info | SPF could not be checked |
 | SPF-001 | Medium | No SPF record |
 | SPF-002 | High | Multiple SPF records (permerror) |
@@ -71,6 +74,7 @@ so the same configuration always gets the same result.
 
 | Check | Statuses |
 |---|---|
+| Name servers | `ok`, `inconsistent`, `lame`, `unreachable`, `not_checked`, `skipped` |
 | SPF | `ok`, `weak`, `invalid`, `missing`, `error`, `skipped` |
 | DKIM | `ok`, `weak`, `invalid`, `missing`, `revoked`, `not_checked`, `error`, `skipped` |
 | DMARC | `ok`, `weak`, `invalid`, `missing`, `error`, `skipped` |

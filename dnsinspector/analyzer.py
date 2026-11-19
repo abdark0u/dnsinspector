@@ -8,6 +8,7 @@ from dnsinspector import __version__
 from dnsinspector.audits.dkim import audit_dkim
 from dnsinspector.audits.dmarc import audit_dmarc
 from dnsinspector.audits.dnssec import audit_dnssec
+from dnsinspector.audits.nameservers import audit_nameservers
 from dnsinspector.audits.records import audit_records, domain_exists
 from dnsinspector.audits.spf import audit_spf
 from dnsinspector.dns_engine import LOOKUP_TYPES, DnsEngine
@@ -48,10 +49,11 @@ def analyze(engine: DnsEngine, domain: str, selectors: list[str] | None = None) 
             )
         )
         skipped = {"status": "skipped"}
-        report.update(spf=skipped, dkim=skipped, dmarc=skipped, dnssec=skipped)
+        report.update(nameservers=skipped, spf=skipped, dkim=skipped, dmarc=skipped, dnssec=skipped)
     else:
         findings += audit_records(domain, records)
         for key, audit in (
+            ("nameservers", lambda: audit_nameservers(engine, domain, records["NS"])),
             ("spf", lambda: audit_spf(engine, domain)),
             ("dkim", lambda: audit_dkim(engine, domain, selectors)),
             ("dmarc", lambda: audit_dmarc(engine, domain)),

@@ -7,7 +7,10 @@ from typing import Any
 
 import dns.exception
 import dns.flags
+import dns.message
 import dns.name
+import dns.query
+import dns.rcode
 import dns.rdatatype
 import dns.resolver
 import dns.reversename
@@ -61,8 +64,13 @@ def _sort_key(rdata: Any) -> tuple:
 class DnsEngine:
     """Envoltorio de dnspython con tiempos de espera limitados."""
 
-    def __init__(self, settings: Settings | None = None, resolver: Any = None) -> None:
+    def __init__(
+        self, settings: Settings | None = None, resolver: Any = None, send: Any = None
+    ) -> None:
         settings = settings or Settings()
+        self.timeout = settings.dns_timeout
+        # funcion que manda una consulta directa a un servidor (en los tests se cambia)
+        self.send = send or dns.query.udp
         if resolver is None:
             resolver = dns.resolver.Resolver(configure=not settings.nameservers)
             if settings.nameservers:
@@ -96,6 +104,32 @@ class DnsEngine:
             self._fill_from_answer(result, answer)
         result.elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
         logger.debug("query %s %s -> %s", name, rtype, result.status)
+        return result
+
+    def query_authoritative(self, ip: str, name: str) -> dict:
+        """Pregunta el SOA directamente a un servidor autoritativo (sin recursion)."""
+        query = dns.message.make_query(name, "SOA")
+        query.flags &= ~dns.flags.RD
+        result: dict = {"status": ERROR, "serial": None, "aa": False, "rcode": None, "error": None}
+        start = time.perf_counter()
+        try:
+            response = self.send(query, ip, timeout=self.timeout)
+        except dns.exception.Timeout:
+            result["status"] = TIMEOUT
+        except (OSError, dns.exception.DNSException) as exc:
+            result["error"] = str(exc) or exc.__class__.__name__
+        else:
+            result["rcode"] = dns.rcode.to_text(response.rcode())
+            result["aa"] = bool(response.flags & dns.flags.AA)
+            soa = next((r for r in response.answer if r.rdtype == dns.rdatatype.SOA), None)
+            # si no es AA o no trae el SOA, el servidor no sirve la zona (lame)
+            if result["rcode"] == "NOERROR" and result["aa"] and soa:
+                result["status"] = OK
+                result["serial"] = soa[0].serial
+                result["primary"] = soa[0].mname.to_text()
+            else:
+                result["status"] = "lame"
+        result["elapsed_ms"] = round((time.perf_counter() - start) * 1000, 1)
         return result
 
     def reverse(self, ip: str) -> QueryResult:

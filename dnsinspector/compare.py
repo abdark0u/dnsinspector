@@ -1,6 +1,6 @@
 """Compara dos analisis del mismo dominio."""
 
-AUDITS = ("spf", "dkim", "dmarc", "dnssec")
+AUDITS = ("nameservers", "spf", "dkim", "dmarc", "dnssec")
 
 
 def compare_reports(first: dict, second: dict) -> dict:
