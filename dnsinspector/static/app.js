@@ -176,6 +176,13 @@ function dnssecDetail(dnssec) {
   return esc(parts.join(" · "));
 }
 
+function mtaStsDetail(m) {
+  if (m.status === "not_applicable") return "Domain has no MX records";
+  if (m.status === "skipped") return "-";
+  const id = m.mta_sts?.tags?.id ? `id=${m.mta_sts.tags.id}` : "no policy record";
+  return `<code>${esc(id)}</code> · TLS-RPT: ${esc(m.tls_rpt?.status || "-")}`;
+}
+
 function renderReport(r) {
   const counts = r.summary.counts;
   const sevBar = SEVERITIES.map((s) => `<div class="sev-count sev-${s} ${counts[s] ? "" : "zero"}">
@@ -225,6 +232,7 @@ function renderReport(r) {
     ${auditCard("DKIM", r.dkim, dkimDetail(r.dkim))}
     ${auditCard("DMARC", r.dmarc, dmarcDetail(r.dmarc))}
     ${auditCard("DNSSEC", r.dnssec, dnssecDetail(r.dnssec))}
+    ${r.mta_sts ? auditCard("MTA-STS", r.mta_sts, mtaStsDetail(r.mta_sts)) : ""}
   </div>
 
   <h2>Findings by severity</h2>

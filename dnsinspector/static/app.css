@@ -120,7 +120,7 @@ input[aria-invalid="true"] { border-color: var(--critical); }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* tarjetas de estado */
-.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 20px; }
 .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
 .card-title { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
 .card-detail { color: var(--muted); font-size: 12.5px; margin-top: 8px; word-break: break-word; }
