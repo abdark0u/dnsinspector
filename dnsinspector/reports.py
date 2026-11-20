@@ -19,6 +19,7 @@ AUDITS = (
     ("DKIM", "dkim"),
     ("DMARC", "dmarc"),
     ("DNSSEC", "dnssec"),
+    ("MTA-STS", "mta_sts"),
 )
 
 

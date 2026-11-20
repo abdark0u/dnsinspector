@@ -15,7 +15,7 @@ def test_text_output(capsys):
     assert run_check(["Example.com"]) == 0
     out = capsys.readouterr().out
     assert "example.com" in out
-    assert "SPF    ok" in out
+    assert "SPF         ok" in out
     assert "DNSSEC-001" in out
 
 

@@ -25,7 +25,7 @@ def test_save_get_list_delete(storage):
     assert storage.get(first)["id"] == first
     items = storage.list()
     assert [i["id"] for i in items] == [second, first]
-    assert items[0]["counts"]["low"] == 1
+    assert items[0]["counts"]["low"] == 2
     assert storage.list(domain="other.com") == []
     assert storage.delete(first) is True
     assert storage.delete(first) is False

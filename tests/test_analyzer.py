@@ -39,7 +39,8 @@ def test_full_report_structure():
     assert report["dkim"]["status"] == "not_checked"
     assert report["dnssec"]["status"] == "unsigned"
     assert report["nameservers"]["status"] == "not_checked"
-    assert ids(report) == ["DNSSEC-001", "DKIM-001"]
+    assert ids(report) == ["DNSSEC-001", "MTASTS-001", "DKIM-001", "TLSRPT-001"]
+    assert report["mta_sts"]["status"] == "missing"
     assert report["summary"]["highest_severity"] == "low"
     assert report["duration_ms"] >= 0
 

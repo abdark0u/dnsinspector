@@ -69,6 +69,10 @@ so the same configuration always gets the same result.
 | DNSSEC-005 | Medium | Deprecated signing algorithm (RFC 8624) |
 | DNSSEC-006 | Low | Only SHA-1 DS digests |
 | DNSSEC-007 | Info | Resolver did not set the AD flag |
+| MTASTS-001 | Low | No MTA-STS policy record (domain receives mail) |
+| MTASTS-002 | Low | Invalid or duplicate MTA-STS record |
+| TLSRPT-001 | Low / Info | No TLS-RPT record (Low when MTA-STS is published, Info otherwise) |
+| TLSRPT-002 | Low | Invalid or duplicate TLS-RPT record |
 
 ## What the statuses mean
 
@@ -79,6 +83,7 @@ so the same configuration always gets the same result.
 | DKIM | `ok`, `weak`, `invalid`, `missing`, `revoked`, `not_checked`, `error`, `skipped` |
 | DMARC | `ok`, `weak`, `invalid`, `missing`, `error`, `skipped` |
 | DNSSEC | `signed`, `unsigned`, `no_chain`, `broken`, `error`, `skipped` |
+| MTA-STS | `ok`, `invalid`, `missing`, `not_applicable`, `error`, `skipped` |
 
 `signed` means DNSInspector verified locally that a DS record matches a DNSKEY and
 that the DNSKEY RRset signature is valid. It is **not** a full validation of the
