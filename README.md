@@ -38,6 +38,11 @@ recursive resolver. No port scans, no zone transfers, no access to private netwo
   parses `v, p, sp, rua, ruf, pct, adkim, aspf`, detects syntax errors, duplicate records,
   `p=none`, `sp=none`, `pct<100`, missing or invalid report URIs.
 
+**MTA-STS and TLS-RPT** (only for domains with MX records)
+- Checks the `_mta-sts` TXT record (RFC 8461: `v=STSv1`, `id`) and the `_smtp._tls`
+  TLS-RPT record (RFC 8460: `v=TLSRPTv1`, `rua` with `mailto:`/`https:` URIs),
+  including duplicates and syntax errors.
+
 **DNSSEC audit**
 - Detects DS (at the parent) and DNSKEY (in the zone) records, with key tags, algorithms
   and KSK/ZSK roles.
@@ -251,6 +256,8 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
 - **DKIM**: selectors cannot be discovered through DNS, so only the selectors you provide
   are checked. A valid key record does not prove that mail is signed correctly; that needs
   a real signed message.
+- **MTA-STS**: only the DNS record is checked; the policy file served over HTTPS at
+  `mta-sts.<domain>` is not downloaded, so its mode and MX patterns are not verified.
 - **DMARC** organizational domain uses the Public Suffix List bundled with the
   `publicsuffix2` package, which can be slightly out of date. External report
   destination authorization (RFC 7489 section 7.1) is not checked.
@@ -283,7 +290,7 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 ## Roadmap
 
 - Full DNSSEC chain validation from the root and NSEC/NSEC3 checks.
-- MTA-STS, TLS-RPT and BIMI record checks.
+- Download and validate the MTA-STS policy file; BIMI record checks.
 - Probing a list of common DKIM selectors (opt-in).
 - Optional authentication for multi-user deployments.
 

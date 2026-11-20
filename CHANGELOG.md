@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- MTA-STS (RFC 8461) and TLS-RPT (RFC 8460) record checks for domains that receive mail,
+  with a new dashboard card, PDF row and CLI line (MTASTS-001/002, TLSRPT-001/002).
 - Authoritative name server checks: each NS is queried directly for the SOA to detect
   lame delegations (DNS-006), unresponsive servers (DNS-007) and SOA serial mismatches
   (DNS-008). Shown in the dashboard, PDF report and history comparison.

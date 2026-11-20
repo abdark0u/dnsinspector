@@ -1,6 +1,6 @@
 # Project status
 
-_Last updated: 2026-11-19_
+_Last updated: 2026-11-20_
 
 ## Current phase
 
@@ -50,7 +50,7 @@ Each stage ends with tests passing, a CHANGELOG entry and a push.
 |---|---|---|
 | 1 | Public Suffix List for DMARC org domain | **Done 2026-11-18**: `tests/test_dmarc.py` |
 | 2 | Per-authoritative-server checks (SOA serial consistency, lame delegation) | **Done 2026-11-19**: `tests/test_nameservers.py`, DNS-006/007/008 |
-| 3 | MTA-STS and TLS-RPT records | New audit module + dashboard card |
+| 3 | MTA-STS and TLS-RPT records | **Done 2026-11-20**: `tests/test_mta_sts.py`, dashboard card |
 | 4 | Full DNSSEC chain validation from the root | Tests with a signed parent/child test hierarchy |
 | 5 | CLI mode (`dnsinspector check example.com --json`) | **Done 2026-11-17**: `tests/test_cli.py`, README section |
 | 6 | Release v0.2.0 | Tag, GitHub release, CI green |

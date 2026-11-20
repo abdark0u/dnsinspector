@@ -61,6 +61,7 @@ the history view filters and sorts by.
 | DKIM key record tags | RFC 6376 section 3.6.1, RFC 8301 (RSA >= 1024, 2048 recommended), RFC 8463 (Ed25519) |
 | DMARC tags and policy discovery | RFC 7489 sections 6.3 and 6.6.3 |
 | DMARC organizational domain | RFC 7489 section 3.2, Public Suffix List |
+| MTA-STS and TLS-RPT records | RFC 8461, RFC 8460 |
 | DNSSEC records, DS digest, AD bit | RFC 4033, RFC 4034, RFC 4035, RFC 6840 |
 
 ## Key decisions
