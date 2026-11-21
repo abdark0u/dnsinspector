@@ -68,6 +68,7 @@ so the same configuration always gets the same result.
 | DNSSEC-003 | High | Chain of trust broken (DS/DNSKEY mismatch, bad RRSIG, DS without DNSKEY) |
 | DNSSEC-005 | Medium | Deprecated signing algorithm (RFC 8624) |
 | DNSSEC-006 | Low | Only SHA-1 DS digests |
+| DNSSEC-008 | High | Chain of trust does not validate up to the root (RFC 4035) |
 | DNSSEC-007 | Info | Resolver did not set the AD flag |
 | MTASTS-001 | Low | No MTA-STS policy record (domain receives mail) |
 | MTASTS-002 | Low | Invalid or duplicate MTA-STS record |

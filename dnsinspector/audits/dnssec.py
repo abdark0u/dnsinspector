@@ -1,22 +1,29 @@
 """Auditoria DNSSEC.
 
 Comprobamos: DS en el padre, DNSKEY en la zona, que algun DS coincida con una DNSKEY
-y que la firma (RRSIG) del conjunto DNSKEY sea valida. NO validamos la cadena entera
-hasta la raiz, eso se explica en el informe.
+y que la firma (RRSIG) del conjunto DNSKEY sea valida. Ademas validamos la cadena de
+confianza desde la raiz (ancla de confianza -> TLD -> dominio).
 """
 
 import dns.dnssec
 import dns.exception
 import dns.name
+import dns.rdata
+import dns.rrset
 
 from dnsinspector.dns_engine import NODATA, NXDOMAIN, OK, DnsEngine, QueryResult
 from dnsinspector.findings import Finding, Severity
 
 CATEGORY = "DNSSEC"
 NOTE = (
-    "DNSInspector checks that the parent DS matches a DNSKEY and that the DNSKEY set is "
-    "correctly signed. It does not validate the full chain of trust up to the root; the AD "
-    "flag is reported as returned by the configured resolver."
+    "DNSInspector checks that the parent DS matches a DNSKEY, that the DNSKEY set is "
+    "correctly signed and that the chain of trust validates from the IANA root trust "
+    "anchors down to the domain. The AD flag is reported as returned by the resolver."
+)
+# anclas de confianza de la raiz (IANA, KSK-2017 y KSK-2024), en formato DS
+ROOT_TRUST_ANCHORS = (
+    "20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D",
+    "38696 8 2 683D2D0ACB8C9B712A1948B27F741219298D0A450D612C483AF444A4C0FB2B16",
 )
 # algoritmos que ya no se deben usar para firmar (RFC 8624)
 DEPRECATED_ALGORITHMS = {1, 3, 5, 6, 7, 12}
@@ -62,7 +69,85 @@ def validate_locally(domain: str, ds: QueryResult, dnskey: QueryResult) -> dict:
     return result
 
 
-def audit_dnssec(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
+def _matching_keys(zone, ds_rdatas, dnskey_rrset):
+    """Devuelve las DNSKEY de la zona que coinciden con algun DS."""
+    matched = []
+    for key in dnskey_rrset:
+        for ds_rdata in ds_rdatas:
+            try:
+                made = dns.dnssec.make_ds(zone, key, ds_rdata.digest_type, validating=True)
+            except (dns.dnssec.UnsupportedAlgorithm, ValueError):
+                continue
+            if made == ds_rdata:
+                matched.append(key)
+                break
+    return matched
+
+
+def _signed_by(signer, rrset, rrsigs, keys) -> bool:
+    """True si alguna firma del rrset es valida con esas claves."""
+    if not rrsigs or not keys:
+        return False
+    keyset = dns.rrset.from_rdata_list(signer, 0, keys)
+    for sig in rrsigs:
+        try:
+            dns.dnssec.validate(rrset, sig, {signer: keyset})
+            return True
+        except (dns.dnssec.ValidationFailure, dns.exception.DNSException):
+            continue
+    return False
+
+
+def validate_chain(engine: DnsEngine, domain: str, anchors=ROOT_TRUST_ANCHORS) -> dict:
+    """Valida la cadena raiz -> TLD -> dominio. Estados: valid, invalid, incomplete."""
+    result: dict = {"status": "valid", "steps": [], "error": None}
+    labels = dns.name.from_text(domain).labels[:-1]
+    zones = [dns.name.root] + [
+        dns.name.Name(labels[i:] + (b"",)) for i in range(len(labels) - 1, -1, -1)
+    ]
+
+    def stop(status: str, message: str) -> dict:
+        result["status"], result["error"] = status, message
+        return result
+
+    # raiz: el DS del ancla debe coincidir con una DNSKEY y esa clave firma el conjunto
+    anchor_ds = [dns.rdata.from_text("IN", "DS", a) for a in anchors]
+    keys = engine.query(".", "DNSKEY")
+    if keys.status != OK:
+        return stop("incomplete", f"Could not fetch the root DNSKEY ({keys.status})")
+    matched = _matching_keys(dns.name.root, anchor_ds, keys.rrset)
+    if not _signed_by(dns.name.root, keys.rrset, keys.rrsigs, matched):
+        return stop("invalid", "Root DNSKEY set does not validate against the trust anchors")
+    result["steps"].append({"zone": ".", "status": "valid"})
+    trusted = list(keys.rrset)
+    parent = dns.name.root
+
+    for zone in zones[1:]:
+        text = zone.to_text()
+        ds = engine.query(text, "DS")
+        if ds.status not in (OK, NODATA):
+            return stop("incomplete", f"Could not fetch DS for {text} ({ds.status})")
+        if ds.status == NODATA:
+            if zone == zones[-1]:
+                return stop("invalid", f"No DS for {text} at its parent")
+            continue  # no es un corte de zona, seguimos con las mismas claves
+        if not _signed_by(parent, ds.rrset, ds.rrsigs, trusted):
+            return stop("invalid", f"DS RRset for {text} is not signed by the parent zone")
+        keys = engine.query(text, "DNSKEY")
+        if keys.status != OK:
+            return stop("incomplete", f"Could not fetch DNSKEY for {text} ({keys.status})")
+        matched = _matching_keys(zone, ds.rrset, keys.rrset)
+        if not _signed_by(zone, keys.rrset, keys.rrsigs, matched):
+            return stop("invalid", f"DNSKEY set of {text} does not validate against its DS")
+        result["steps"].append({"zone": text, "status": "valid"})
+        trusted = list(keys.rrset)
+        parent = zone
+    return result
+
+
+def audit_dnssec(
+    engine: DnsEngine, domain: str, anchors=ROOT_TRUST_ANCHORS
+) -> tuple[dict, list[Finding]]:
     ds = engine.query(domain, "DS")
     dnskey = engine.query(domain, "DNSKEY")
     status: dict = {
@@ -138,6 +223,11 @@ def audit_dnssec(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
         findings.append(_broken(domain, "\n".join(validation["errors"])))
     else:
         status["status"] = "signed"
+        chain = validate_chain(engine, domain, anchors)
+        validation["chain"] = chain
+        if chain["status"] == "invalid":
+            status["status"] = "broken"
+            findings.append(_chain_broken(domain, chain["error"]))
 
     algorithms = {k["algorithm_number"]: k["algorithm"] for k in status["dnskey"]}
     deprecated = sorted(name for num, name in algorithms.items() if num in DEPRECATED_ALGORITHMS)
@@ -194,6 +284,20 @@ def _broken(domain: str, evidence: str) -> Finding:
         f"{domain}: {evidence}",
         "Fix the DS at the registrar so it matches the active KSK, or remove DS before "
         "disabling DNSSEC.",
+        CATEGORY,
+        "RFC 4035 section 5",
+    )
+
+
+def _chain_broken(domain: str, evidence: str) -> Finding:
+    return Finding(
+        "DNSSEC-008",
+        Severity.HIGH,
+        "Chain of trust does not validate up to the root",
+        "The zone looks signed, but the chain from the IANA root trust anchor down to the "
+        "domain does not validate, so validating resolvers will reject it.",
+        f"{domain}: {evidence}",
+        "Check the DS record at the registrar and the signatures of the parent zones.",
         CATEGORY,
         "RFC 4035 section 5",
     )

@@ -98,3 +98,87 @@ def test_sha1_only_ds():
     )
     assert status["status"] == "signed"
     assert ids(findings) == {"DNSSEC-006"}
+
+
+# --- cadena de confianza raiz -> com -> example.com ---
+
+
+def make_zone(name, parent_name=None, parent_priv=None, parent_key=None):
+    """Zona con una clave que firma todo: devuelve DNSKEY firmado y el DS firmado por el padre."""
+    zone = dns.name.from_text(name)
+    private = ed25519.Ed25519PrivateKey.generate()
+    key = dns.dnssec.make_dnskey(private.public_key(), dns.dnssec.Algorithm.ED25519, flags=257)
+    keyset = dns.rrset.from_rdata(zone, 3600, key)
+    sig = dns.rrset.from_rdata(
+        zone, 3600, dns.dnssec.sign(keyset, private, zone, key, lifetime=3600)
+    )
+    ds_rr = None
+    if parent_priv:
+        ds = dns.dnssec.make_ds(zone, key, "SHA256")
+        ds_set = dns.rrset.from_rdata(zone, 3600, ds)
+        ds_sig = dns.rrset.from_rdata(
+            zone,
+            3600,
+            dns.dnssec.sign(
+                ds_set, parent_priv, dns.name.from_text(parent_name), parent_key, lifetime=3600
+            ),
+        )
+        ds_rr = (ds_set, [ds_sig])
+    return private, key, (keyset, [sig]), ds_rr
+
+
+def hierarchy(break_com_ds=False):
+    root_priv, root_key, root_keys, _ = make_zone(".")
+    com_priv, com_key, com_keys, com_ds = make_zone("com", ".", root_priv, root_key)
+    _, _, ex_keys, ex_ds = make_zone("example.com", "com", com_priv, com_key)
+    if break_com_ds:  # DS de com firmado por otra clave que no es la de la raiz
+        other_priv, other_key, _, _ = make_zone(".")
+        _, _, _, com_ds = make_zone("com", ".", other_priv, other_key)
+    anchor = dns.dnssec.make_ds(dns.name.root, root_key, "SHA256").to_text()
+    data = {
+        (".", "DNSKEY"): root_keys,
+        ("com", "DS"): com_ds,
+        ("com", "DNSKEY"): com_keys,
+        ("example.com", "DS"): ex_ds,
+        ("example.com", "DNSKEY"): ex_keys,
+    }
+    return data, anchor
+
+
+def test_full_chain_valid():
+    data, anchor = hierarchy()
+    engine = DnsEngine(resolver=FakeResolver({("example.com", "A"): ["192.0.2.1"], **data}))
+    status, findings = audit_dnssec(engine, "example.com", anchors=(anchor,))
+    assert status["status"] == "signed"
+    assert status["validation"]["chain"]["status"] == "valid"
+    assert [s["zone"] for s in status["validation"]["chain"]["steps"]] == [
+        ".",
+        "com.",
+        "example.com.",
+    ]
+    assert "DNSSEC-008" not in ids(findings)
+
+
+def test_chain_broken_in_parent_ds():
+    data, anchor = hierarchy(break_com_ds=True)
+    engine = DnsEngine(resolver=FakeResolver({("example.com", "A"): ["192.0.2.1"], **data}))
+    status, findings = audit_dnssec(engine, "example.com", anchors=(anchor,))
+    assert status["status"] == "broken"
+    assert "DNSSEC-008" in ids(findings)
+
+
+def test_wrong_trust_anchor_is_invalid():
+    data, _ = hierarchy()
+    _, other_key, _, _ = make_zone(".")
+    wrong = dns.dnssec.make_ds(dns.name.root, other_key, "SHA256").to_text()
+    engine = DnsEngine(resolver=FakeResolver({("example.com", "A"): ["192.0.2.1"], **data}))
+    status, findings = audit_dnssec(engine, "example.com", anchors=(wrong,))
+    assert "DNSSEC-008" in ids(findings)
+
+
+def test_chain_incomplete_does_not_add_finding():
+    # sin datos de la raiz no se puede validar, pero tampoco es un fallo
+    keys, ds = signed_zone()
+    status, findings = run({("example.com", "DNSKEY"): keys, ("example.com", "DS"): ds}, ad=True)
+    assert status["validation"]["chain"]["status"] == "incomplete"
+    assert findings == []

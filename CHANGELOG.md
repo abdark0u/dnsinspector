@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Full DNSSEC chain validation from the root trust anchors (root -> TLD -> domain), with
+  a new DNSSEC-008 finding when the chain does not validate.
 - MTA-STS (RFC 8461) and TLS-RPT (RFC 8460) record checks for domains that receive mail,
   with a new dashboard card, PDF row and CLI line (MTASTS-001/002, TLSRPT-001/002).
 - Authoritative name server checks: each NS is queried directly for the SOA to detect

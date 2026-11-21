@@ -48,6 +48,8 @@ recursive resolver. No port scans, no zone transfers, no access to private netwo
   and KSK/ZSK roles.
 - Verifies **locally, with real cryptography** that a DS record matches a DNSKEY and that
   the DNSKEY RRset signature (RRSIG) is valid.
+- Validates the **whole chain of trust** from the IANA root trust anchors (root -> TLD ->
+  domain), checking every DS and DNSKEY RRset signature (DNSSEC-008 when it breaks).
 - Reports the resolver's AD (Authenticated Data) flag separately, and flags deprecated
   algorithms and SHA-1-only DS digests.
 - Clearly separates "DNSSEC present" from "verified" and documents what is not verified
@@ -249,9 +251,10 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
 ## Limitations
 
 - **DNSSEC**: DNSInspector verifies the DS -> DNSKEY link and the DNSKEY RRset signature.
-  It does **not** validate the whole chain of trust from the root, does not verify the
+  It validates the chain of trust from the root trust anchors, but does not verify the
   signatures of other RRsets (A, MX, ...) and does not check NSEC/NSEC3 denial of
-  existence. The AD flag is reported as returned by the resolver and only means something
+  existence. The chain is built from answers of the configured resolver, so a resolver
+  that strips DNSSEC data gives an "incomplete" chain (no finding). The AD flag is reported as returned by the resolver and only means something
   if that resolver validates and the path to it is trusted.
 - **DKIM**: selectors cannot be discovered through DNS, so only the selectors you provide
   are checked. A valid key record does not prove that mail is signed correctly; that needs
@@ -289,7 +292,7 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Roadmap
 
-- Full DNSSEC chain validation from the root and NSEC/NSEC3 checks.
+- NSEC/NSEC3 checks.
 - Download and validate the MTA-STS policy file; BIMI record checks.
 - Probing a list of common DKIM selectors (opt-in).
 - Optional authentication for multi-user deployments.
