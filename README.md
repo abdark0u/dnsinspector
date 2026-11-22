@@ -298,10 +298,13 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Roadmap
 
-- NSEC/NSEC3 checks.
-- Download and validate the MTA-STS policy file and the BIMI logo/certificate.
+- SPF void lookup limit (RFC 7208 section 4.6.4).
+- IPv6 addresses in authoritative name server checks.
 - Probing a list of common DKIM selectors (opt-in).
-- Optional authentication for multi-user deployments.
+- NSEC/NSEC3 checks (RFC 9276 parameters, zone walking).
+- Download and validate the MTA-STS policy file.
+- Optional API token authentication.
+- Validate the BIMI logo and certificate.
 
 ## License
 
