@@ -51,9 +51,10 @@ Each stage ends with tests passing, a CHANGELOG entry and a push.
 | 1 | Public Suffix List for DMARC org domain | **Done 2026-11-18**: `tests/test_dmarc.py` |
 | 2 | Per-authoritative-server checks (SOA serial consistency, lame delegation) | **Done 2026-11-19**: `tests/test_nameservers.py`, DNS-006/007/008 |
 | 3 | MTA-STS and TLS-RPT records | **Done 2026-11-20**: `tests/test_mta_sts.py`, dashboard card |
-| 4 | Full DNSSEC chain validation from the root **Done 2026-11-21**: `tests/test_dnssec.py` (signed root/com/example.com hierarchy), DNSSEC-008 |
+| 4 | Full DNSSEC chain validation from the root | **Done 2026-11-21**: `tests/test_dnssec.py` (signed root/com/example.com hierarchy), DNSSEC-008 |
 | 5 | CLI mode (`dnsinspector check example.com --json`) | **Done 2026-11-17**: `tests/test_cli.py`, README section |
 | 6 | Release v0.2.0 | **Done 2026-11-22**: tag, GitHub release, CI green |
+| 7 | BIMI record check | **Done 2026-11-22**: `tests/test_bimi.py`, dashboard card (unreleased) |
 
 ## How to resume
 

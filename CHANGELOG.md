@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- BIMI record check (`default._bimi`): syntax, certificate presence and whether DMARC is
+  enforced enough for the logo to be shown (BIMI-001 to BIMI-004). New dashboard card,
+  PDF row and CLI line.
+
 ## [0.2.0] - 2026-11-22
 
 ### Added

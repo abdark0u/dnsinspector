@@ -43,6 +43,10 @@ recursive resolver. No port scans, no zone transfers, no access to private netwo
   TLS-RPT record (RFC 8460: `v=TLSRPTv1`, `rua` with `mailto:`/`https:` URIs),
   including duplicates and syntax errors.
 
+**BIMI** (only for domains with MX records)
+- Checks the `default._bimi` TXT record (`v=BIMI1`, `l=` https SVG logo, `a=` certificate)
+  and whether DMARC is enforced enough for mail clients to show the logo.
+
 **DNSSEC audit**
 - Detects DS (at the parent) and DNSKEY (in the zone) records, with key tags, algorithms
   and KSK/ZSK roles.
@@ -259,6 +263,8 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
 - **DKIM**: selectors cannot be discovered through DNS, so only the selectors you provide
   are checked. A valid key record does not prove that mail is signed correctly; that needs
   a real signed message.
+- **BIMI**: only the `default` selector record is checked; the SVG logo and the VMC/CMC
+  certificate are not downloaded or validated.
 - **MTA-STS**: only the DNS record is checked; the policy file served over HTTPS at
   `mta-sts.<domain>` is not downloaded, so its mode and MX patterns are not verified.
 - **DMARC** organizational domain uses the Public Suffix List bundled with the
@@ -293,7 +299,7 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 ## Roadmap
 
 - NSEC/NSEC3 checks.
-- Download and validate the MTA-STS policy file; BIMI record checks.
+- Download and validate the MTA-STS policy file and the BIMI logo/certificate.
 - Probing a list of common DKIM selectors (opt-in).
 - Optional authentication for multi-user deployments.
 
