@@ -183,6 +183,14 @@ function mtaStsDetail(m) {
   return `<code>${esc(id)}</code> · TLS-RPT: ${esc(m.tls_rpt?.status || "-")}`;
 }
 
+function bimiDetail(b) {
+  if (b.status === "not_applicable") return "Domain has no MX records";
+  if (b.status === "skipped" || b.status === "error") return "-";
+  const dmarc = b.dmarc_ready ? "DMARC ready" : "DMARC not enforced";
+  if (!b.record) return esc(`No record · ${dmarc}`);
+  return `${b.tags?.a ? "with certificate" : "no certificate"} · ${esc(dmarc)}`;
+}
+
 function renderReport(r) {
   const counts = r.summary.counts;
   const sevBar = SEVERITIES.map((s) => `<div class="sev-count sev-${s} ${counts[s] ? "" : "zero"}">
@@ -233,6 +241,7 @@ function renderReport(r) {
     ${auditCard("DMARC", r.dmarc, dmarcDetail(r.dmarc))}
     ${auditCard("DNSSEC", r.dnssec, dnssecDetail(r.dnssec))}
     ${r.mta_sts ? auditCard("MTA-STS", r.mta_sts, mtaStsDetail(r.mta_sts)) : ""}
+    ${r.bimi ? auditCard("BIMI", r.bimi, bimiDetail(r.bimi)) : ""}
   </div>
 
   <h2>Findings by severity</h2>
