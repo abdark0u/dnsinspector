@@ -1,10 +1,10 @@
 # Project status
 
-_Last updated: 2026-11-21_
+_Last updated: 2026-11-22_
 
 ## Current phase
 
-**Version 0.1.0 released.** Phases 1-10 of the original plan are complete. Next work is
+**Version 0.2.0 released.** Phases 1-10 of the original plan are complete. Next work is
 the roadmap in the README (stages below).
 
 All the work up to v0.1.0 was done in a single working session on 2026-11-16. The commit
@@ -53,7 +53,7 @@ Each stage ends with tests passing, a CHANGELOG entry and a push.
 | 3 | MTA-STS and TLS-RPT records | **Done 2026-11-20**: `tests/test_mta_sts.py`, dashboard card |
 | 4 | Full DNSSEC chain validation from the root **Done 2026-11-21**: `tests/test_dnssec.py` (signed root/com/example.com hierarchy), DNSSEC-008 |
 | 5 | CLI mode (`dnsinspector check example.com --json`) | **Done 2026-11-17**: `tests/test_cli.py`, README section |
-| 6 | Release v0.2.0 | Tag, GitHub release, CI green |
+| 6 | Release v0.2.0 | **Done 2026-11-22**: tag, GitHub release, CI green |
 
 ## How to resume
 

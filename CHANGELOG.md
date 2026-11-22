@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-22
+
 ### Added
 - Full DNSSEC chain validation from the root trust anchors (root -> TLD -> domain), with
   a new DNSSEC-008 finding when the chain does not validate.
