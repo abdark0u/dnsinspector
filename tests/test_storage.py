@@ -56,7 +56,8 @@ def test_compare_detects_changes(storage):
     }
     assert diff["statuses"]["dmarc"] == {"before": "ok", "after": "missing", "changed": True}
     assert [f["id"] for f in diff["findings"]["new"]] == ["DMARC-001"]
-    assert diff["findings"]["resolved"] == []
+    # sin DMARC ya no esta listo para BIMI, asi que BIMI-001 desaparece
+    assert [f["id"] for f in diff["findings"]["resolved"]] == ["BIMI-001"]
 
 
 def test_compare_rejects_different_domains():

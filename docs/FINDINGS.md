@@ -74,6 +74,10 @@ so the same configuration always gets the same result.
 | MTASTS-002 | Low | Invalid or duplicate MTA-STS record |
 | TLSRPT-001 | Low / Info | No TLS-RPT record (Low when MTA-STS is published, Info otherwise) |
 | TLSRPT-002 | Low | Invalid or duplicate TLS-RPT record |
+| BIMI-001 | Info | No BIMI record although DMARC is already enforced |
+| BIMI-002 | Low | Invalid or duplicate BIMI record |
+| BIMI-003 | Low | BIMI published but DMARC is not enforced (logo will not show) |
+| BIMI-004 | Info | BIMI record without certificate (`a=`) |
 
 ## What the statuses mean
 
@@ -85,6 +89,7 @@ so the same configuration always gets the same result.
 | DMARC | `ok`, `weak`, `invalid`, `missing`, `error`, `skipped` |
 | DNSSEC | `signed`, `unsigned`, `no_chain`, `broken`, `error`, `skipped` |
 | MTA-STS | `ok`, `invalid`, `missing`, `not_applicable`, `error`, `skipped` |
+| BIMI | `ok`, `invalid`, `missing`, `not_applicable`, `error`, `skipped` |
 
 `signed` means DNSInspector verified locally that a DS record matches a DNSKEY and
 that the DNSKEY RRset signature is valid. It is **not** a full validation of the

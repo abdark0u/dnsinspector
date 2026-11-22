@@ -20,6 +20,7 @@ AUDITS = (
     ("DMARC", "dmarc"),
     ("DNSSEC", "dnssec"),
     ("MTA-STS", "mta_sts"),
+    ("BIMI", "bimi"),
 )
 
 

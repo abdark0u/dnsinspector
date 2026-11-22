@@ -25,7 +25,7 @@ def serve() -> None:
 def format_text(report: dict) -> str:
     """Resumen corto para la terminal."""
     lines = [f"{report['domain']}  ({report['duration_ms']} ms)", ""]
-    for key in ("nameservers", "spf", "dkim", "dmarc", "dnssec", "mta_sts"):
+    for key in ("nameservers", "spf", "dkim", "dmarc", "dnssec", "mta_sts", "bimi"):
         lines.append(f"  {key.upper():<12}{report[key]['status']}")
     lines.append("")
     for finding in report["findings"]:

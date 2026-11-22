@@ -5,6 +5,7 @@ import time
 from datetime import UTC, datetime
 
 from dnsinspector import __version__
+from dnsinspector.audits.bimi import audit_bimi
 from dnsinspector.audits.dkim import audit_dkim
 from dnsinspector.audits.dmarc import audit_dmarc
 from dnsinspector.audits.dnssec import audit_dnssec
@@ -57,6 +58,7 @@ def analyze(engine: DnsEngine, domain: str, selectors: list[str] | None = None) 
             dmarc=skipped,
             dnssec=skipped,
             mta_sts=skipped,
+            bimi=skipped,
         )
     else:
         findings += audit_records(domain, records)
@@ -67,6 +69,8 @@ def analyze(engine: DnsEngine, domain: str, selectors: list[str] | None = None) 
             ("dmarc", lambda: audit_dmarc(engine, domain)),
             ("dnssec", lambda: audit_dnssec(engine, domain)),
             ("mta_sts", lambda: audit_mta_sts(engine, domain, records["MX"])),
+            # va despues de dmarc porque usa su resultado
+            ("bimi", lambda: audit_bimi(engine, domain, records["MX"], report["dmarc"])),
         ):
             status, audit_findings = audit()
             report[key] = status
