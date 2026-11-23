@@ -1,6 +1,6 @@
 # Project status
 
-_Last updated: 2026-11-22_
+_Last updated: 2026-11-23_
 
 ## Current phase
 
@@ -55,7 +55,7 @@ Each stage ends with tests passing, a CHANGELOG entry and a push.
 | 5 | CLI mode (`dnsinspector check example.com --json`) | **Done 2026-11-17**: `tests/test_cli.py`, README section |
 | 6 | Release v0.2.0 | **Done 2026-11-22**: tag, GitHub release, CI green |
 | 7 | BIMI record check | **Done 2026-11-22**: `tests/test_bimi.py`, dashboard card (unreleased) |
-| 8 | SPF void lookup limit (more than 2 lookups returning NXDOMAIN/NODATA = permerror) | New SPF finding, tests with fake includes |
+| 8 | SPF void lookup limit (more than 2 lookups returning NXDOMAIN/NODATA = permerror) | **Done 2026-11-23**: SPF-014, `tests/test_spf.py` |
 | 9 | IPv6 (AAAA) addresses in authoritative name server checks | Name server table shows IPv6 servers; tests |
 | 10 | Opt-in probing of common DKIM selectors (fixed list, max 10 queries) | API flag, UI checkbox, CLI `--probe-dkim`; tests |
 | 11 | NSEC/NSEC3 checks (NSEC3 iterations and salt per RFC 9276, NSEC zone walking) | New DNSSEC findings; tests with signed fake denial responses |

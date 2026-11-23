@@ -45,6 +45,7 @@ so the same configuration always gets the same result.
 | SPF-011 | High | Broken include/redirect target or include loop |
 | SPF-012 | Low | Terms after `all` are ignored |
 | SPF-013 | Info | Some includes could not be resolved (lookup count is a lower bound) |
+| SPF-014 | High | More than 2 void lookups (NXDOMAIN or empty answers) (permerror) |
 | DKIM-001 | Info | DKIM not checked (no selector given) |
 | DKIM-002 | Medium | No key record for the selector |
 | DKIM-003 | High | Invalid key record (missing `p`, bad base64, bad `k`/`v`) |

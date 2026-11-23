@@ -30,7 +30,8 @@ recursive resolver. No port scans, no zone transfers, no access to private netwo
 - **SPF**: detects the record and duplicates, validates syntax (mechanisms, qualifiers,
   ip4/ip6 networks, modifiers), flags permissive endings (`+all`, `?all`, missing `all`),
   deprecated `ptr`, terms after `all`, and counts DNS lookups recursively through
-  `include`/`redirect` to enforce the RFC 7208 limit of 10 (with loop detection).
+  `include`/`redirect` to enforce the RFC 7208 limit of 10 (with loop detection), and
+  enforces the limit of 2 void lookups (`a`, `mx`, `exists` or includes that return nothing).
 - **DKIM**: for the selectors you provide, queries `<selector>._domainkey.<domain>`,
   validates the tag structure, decodes the public key and reports the real RSA key size
   (or Ed25519), revoked keys and test mode. It never claims a signature is valid.
@@ -271,7 +272,7 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
   `publicsuffix2` package, which can be slightly out of date. External report
   destination authorization (RFC 7489 section 7.1) is not checked.
 - **SPF**: macros (e.g. `%{i}`) cannot be expanded without a real message, so includes
-  that use them are counted but not followed. The "void lookup" limit is not checked.
+  that use them are counted but not followed.
 - Record results come from a recursive resolver, so they can be cached (see the TTL).
   Name server checks only use IPv4 and at most 6 name servers with 2 addresses each.
 - The rate limiter is in-memory and per process. Run a single worker, or rate-limit at a
@@ -298,7 +299,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Roadmap
 
-- SPF void lookup limit (RFC 7208 section 4.6.4).
 - IPv6 addresses in authoritative name server checks.
 - Probing a list of common DKIM selectors (opt-in).
 - NSEC/NSEC3 checks (RFC 9276 parameters, zone walking).
