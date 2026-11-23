@@ -112,3 +112,21 @@ def test_include_dns_failure_is_not_a_config_error():
     assert ids(findings) == {"SPF-013"}
     assert status["unchecked_includes"] == ["flaky.com: timeout"]
     assert status["status"] == "ok"
+
+
+def test_void_lookups_over_limit():
+    status, findings = run(
+        {
+            ("example.com", "TXT"): ['"v=spf1 a:x.test mx:y.test exists:z.test a:w.test -all"'],
+            ("w.test", "TXT"): ["x"],
+        }
+    )
+    assert "SPF-014" in ids(findings)
+    assert status["status"] == "invalid"
+    assert len(status["void_lookups"]) == 4
+
+
+def test_two_void_lookups_are_allowed():
+    status, findings = run({("example.com", "TXT"): ['"v=spf1 a:x.test mx:y.test -all"']})
+    assert "SPF-014" not in ids(findings)
+    assert len(status["void_lookups"]) == 2

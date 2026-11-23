@@ -7,6 +7,7 @@ from dnsinspector.dns_engine import NODATA, NXDOMAIN, OK, DnsEngine
 from dnsinspector.findings import Finding, Severity
 
 LOOKUP_LIMIT = 10  # RFC 7208 4.6.4
+VOID_LIMIT = 2  # RFC 7208 4.6.4: mas de 2 consultas vacias = permerror
 REF = "RFC 7208"
 CATEGORY = "Email security / SPF"
 
@@ -76,13 +77,15 @@ def count_lookups(
     Para en cuanto se pasa del limite, asi no hacemos consultas infinitas.
     """
     visited = visited if visited is not None else set()
-    state = state if state is not None else {"count": 0, "errors": [], "chain": []}
+    state = state if state is not None else {"count": 0, "errors": [], "chain": [], "void": []}
     visited.add(domain)
     txt = engine.query(domain, "TXT")
     if txt.status not in (OK, NODATA, NXDOMAIN):
         # un fallo de red no es un error de configuracion, lo apuntamos aparte
         state.setdefault("unchecked", []).append(f"{domain}: {txt.status}")
         return state
+    if txt.status != OK:  # NXDOMAIN o NODATA cuenta como consulta vacia
+        state["void"].append(f"TXT {domain}")
     records = find_spf_records(txt.records)
     if len(records) != 1:
         state["errors"].append(f"{domain}: {'no' if not records else 'multiple'} SPF record")
@@ -96,6 +99,8 @@ def count_lookups(
         if state["count"] > LOOKUP_LIMIT:
             return state
         target = term["value"].lower().rstrip(".")
+        if term["name"] in ("a", "mx", "exists"):
+            _check_void(engine, domain, term, state)
         if term["name"] in ("include", "redirect") and target:
             state["chain"].append(f"{domain} -> {target}")
             if "%" in target:  # macros: no se pueden expandir sin el mensaje real
@@ -107,6 +112,20 @@ def count_lookups(
             if state["count"] > LOOKUP_LIMIT:
                 return state
     return state
+
+
+def _check_void(engine: DnsEngine, domain: str, term: dict, state: dict) -> None:
+    """Hace la consulta de a/mx/exists y apunta si sale vacia (void lookup)."""
+    # a y mx pueden llevar dominio y /cidr; sin dominio se usa el actual
+    target = term["value"].split("/")[0].lower().rstrip(".") or domain
+    if "%" in target:  # macros: no se pueden expandir
+        return
+    types = {"a": ["A", "AAAA"], "mx": ["MX"], "exists": ["A"]}[term["name"]]
+    results = [engine.query(target, rtype) for rtype in types]
+    if any(r.status == OK for r in results):
+        return
+    if all(r.status in (NODATA, NXDOMAIN) for r in results):
+        state["void"].append(f"{term['name']} {target}")
 
 
 def audit_spf(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
@@ -206,6 +225,7 @@ def audit_spf(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
     status["lookup_count"] = lookups["count"]
     status["include_chain"] = lookups["chain"]
     status["unchecked_includes"] = lookups.get("unchecked", [])
+    status["void_lookups"] = lookups["void"]
     nested_errors = [e for e in lookups["errors"] if not e.startswith(f"{domain}:")]
     if lookups["count"] > LOOKUP_LIMIT:
         findings.append(
@@ -231,6 +251,20 @@ def audit_spf(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
                 "Adding one more provider may push the record over the limit.",
                 f"{lookups['count']} of {LOOKUP_LIMIT} lookups used",
                 "Review includes before adding new senders.",
+                CATEGORY,
+                f"{REF} section 4.6.4",
+            )
+        )
+    if len(lookups["void"]) > VOID_LIMIT:
+        findings.append(
+            Finding(
+                "SPF-014",
+                Severity.HIGH,
+                "SPF exceeds the 2 void lookup limit",
+                "More than 2 DNS lookups return no data (NXDOMAIN or empty answer). Receivers "
+                "that enforce RFC 7208 return 'permerror', so SPF fails for legitimate mail.",
+                f"{len(lookups['void'])} void lookups:\n" + "\n".join(lookups["void"]),
+                "Remove the include, a, mx or exists terms that point to names without records.",
                 CATEGORY,
                 f"{REF} section 4.6.4",
             )
@@ -264,7 +298,12 @@ def audit_spf(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
 
     # invalid = los receptores darian permerror; weak = funciona pero protege poco
     serious = {Severity.CRITICAL, Severity.HIGH, Severity.MEDIUM}
-    if errors or nested_errors or lookups["count"] > LOOKUP_LIMIT:
+    if (
+        errors
+        or nested_errors
+        or lookups["count"] > LOOKUP_LIMIT
+        or len(lookups["void"]) > VOID_LIMIT
+    ):
         status["status"] = "invalid"
     elif any(f.severity in serious for f in findings):
         status["status"] = "weak"
