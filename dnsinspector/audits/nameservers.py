@@ -15,26 +15,38 @@ def _servers(engine: DnsEngine, domain: str, ns_names: list[str]) -> list[dict]:
     servers: list[dict] = []
     for ns in ns_names[:MAX_NS]:
         host = ns.rstrip(".")
-        # shortcut: solo IPv4 (A); si hace falta mirar IPv6 anadir AAAA aqui
-        addresses = engine.query(host, "A")
-        if addresses.status != OK:
+        # miramos IPv4 y IPv6 (maximo MAX_IPS_PER_NS de cada)
+        v4 = engine.query(host, "A")
+        v6 = engine.query(host, "AAAA")
+        ips = (v4.records[:MAX_IPS_PER_NS] if v4.status == OK else []) + (
+            v6.records[:MAX_IPS_PER_NS] if v6.status == OK else []
+        )
+        if not ips:
             servers.append(
                 {
                     "ns": host,
                     "ip": None,
                     "status": "unresolved",
-                    "error": f"A {host}: {addresses.status}",
+                    "error": f"A {host}: {v4.status}, AAAA {host}: {v6.status}",
                 }
             )
             continue
-        for ip in addresses.records[:MAX_IPS_PER_NS]:
+        for ip in ips:
             if not ipaddress.ip_address(ip).is_global:
                 # no mandamos consultas a redes privadas
                 servers.append(
                     {"ns": host, "ip": ip, "status": "not_checked", "error": "non-public address"}
                 )
                 continue
-            servers.append({"ns": host, "ip": ip, **engine.query_authoritative(ip, domain)})
+            result = engine.query_authoritative(ip, domain)
+            if ":" in ip and result["status"] == "error":
+                # sin ruta IPv6 desde este equipo no es culpa del servidor
+                result = {
+                    **result,
+                    "status": "not_checked",
+                    "error": f"IPv6 unreachable: {result['error']}",
+                }
+            servers.append({"ns": host, "ip": ip, **result})
     return servers
 
 

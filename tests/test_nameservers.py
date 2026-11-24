@@ -96,3 +96,29 @@ def test_different_providers_are_not_compared():
     status, findings = run({"8.8.4.4": ("a.ns.test.", 5), "9.9.9.9": ("ns.other.test.", 999)})
     assert status["status"] == "ok"
     assert findings == []
+
+
+def test_ipv6_server_is_checked():
+    data = {**NS, ("b.ns.test", "AAAA"): ["2001:4860:4860::8888"]}
+    status, findings = run({"8.8.4.4": 7, "9.9.9.9": 7, "2001:4860:4860::8888": 7}, data)
+    ips = [s["ip"] for s in status["servers"]]
+    assert "2001:4860:4860::8888" in ips
+    assert status["status"] == "ok"
+    assert findings == []
+
+
+def test_ipv6_only_server_and_private_ipv6_skipped():
+    data = {
+        ("example.com", "NS"): ["a.ns.test."],
+        ("a.ns.test", "AAAA"): ["2001:4860:4860::8888", "fd00::1"],
+    }
+    status, _ = run({"2001:4860:4860::8888": 3}, data)
+    assert [s["status"] for s in status["servers"]] == ["ok", "not_checked"]
+
+
+def test_ipv6_network_error_is_not_a_finding():
+    data = {**NS, ("a.ns.test", "AAAA"): ["2001:4860:4860::8888"]}
+    behaviour = {"8.8.4.4": 7, "9.9.9.9": 7, "2001:4860:4860::8888": OSError("No route to host")}
+    status, findings = run(behaviour, data)
+    assert status["status"] == "ok"
+    assert findings == []
