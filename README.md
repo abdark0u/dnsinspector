@@ -274,7 +274,8 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
 - **SPF**: macros (e.g. `%{i}`) cannot be expanded without a real message, so includes
   that use them are counted but not followed.
 - Record results come from a recursive resolver, so they can be cached (see the TTL).
-  Name server checks only use IPv4 and at most 6 name servers with 2 addresses each.
+  Name server checks cover at most 6 name servers with 2 IPv4 and 2 IPv6 addresses each;
+  IPv6 servers that cannot be reached because this host has no IPv6 route are not flagged.
 - The rate limiter is in-memory and per process. Run a single worker, or rate-limit at a
   reverse proxy.
 - PDF reports use the built-in PDF fonts (Latin-1); other characters are replaced by `?`.
@@ -299,7 +300,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Roadmap
 
-- IPv6 addresses in authoritative name server checks.
 - Probing a list of common DKIM selectors (opt-in).
 - NSEC/NSEC3 checks (RFC 9276 parameters, zone walking).
 - Download and validate the MTA-STS policy file.

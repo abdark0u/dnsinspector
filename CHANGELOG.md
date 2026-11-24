@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- IPv6 (AAAA) addresses of the authoritative name servers are now queried too (up to 2 IPv4
+  and 2 IPv6 per server). IPv6 network errors are shown as not checked, not as DNS-007.
 - SPF void lookup limit (RFC 7208 section 4.6.4): more than 2 `a`, `mx`, `exists`, `include`
   or `redirect` lookups returning NXDOMAIN or an empty answer raise SPF-014 and mark the
   record invalid.
