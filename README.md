@@ -34,7 +34,9 @@ recursive resolver. No port scans, no zone transfers, no access to private netwo
   enforces the limit of 2 void lookups (`a`, `mx`, `exists` or includes that return nothing).
 - **DKIM**: for the selectors you provide, queries `<selector>._domainkey.<domain>`,
   validates the tag structure, decodes the public key and reports the real RSA key size
-  (or Ed25519), revoked keys and test mode. It never claims a signature is valid.
+  (or Ed25519), revoked keys and test mode. It never claims a signature is valid. Optionally
+  (`--probe-dkim`, API `probe_dkim`, UI checkbox) it also probes 10 common selectors
+  (`default`, `google`, `selector1`, ...) and reports only the ones that exist.
 - **DMARC**: queries `_dmarc.<domain>` (falling back to the organizational domain, computed with the Public Suffix List),
   parses `v, p, sp, rua, ruf, pct, adkim, aspf`, detects syntax errors, duplicate records,
   `p=none`, `sp=none`, `pct<100`, missing or invalid report URIs.
@@ -221,7 +223,7 @@ curl -s 'http://127.0.0.1:8000/api/compare?a=1&b=2'
 |---|---|---|
 | GET | `/api/health` | Health check and version |
 | GET | `/api/lookup?name=&type=` | Query one type (`A`, `AAAA`, `MX`, `CNAME`, `TXT`, `NS`, `SOA`) or `ALL`; a public IP returns its PTR. Rate limited. |
-| POST | `/api/analyses` | Run and store a full analysis. Body: `{"domain": str, "dkim_selectors": [str] (max 5)}`. Rate limited. |
+| POST | `/api/analyses` | Run and store a full analysis. Body: `{"domain": str, "dkim_selectors": [str] (max 5), "probe_dkim": bool}`. Rate limited. |
 | GET | `/api/analyses?domain=&limit=&offset=` | List history (newest first) |
 | GET | `/api/analyses/{id}` | Full stored report |
 | DELETE | `/api/analyses/{id}` | Delete from history |
@@ -262,7 +264,7 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
   that strips DNSSEC data gives an "incomplete" chain (no finding). The AD flag is reported as returned by the resolver and only means something
   if that resolver validates and the path to it is trusted.
 - **DKIM**: selectors cannot be discovered through DNS, so only the selectors you provide
-  are checked. A valid key record does not prove that mail is signed correctly; that needs
+  (plus the 10 common ones if you opt in) are checked. A valid key record does not prove that mail is signed correctly; that needs
   a real signed message.
 - **BIMI**: only the `default` selector record is checked; the SVG logo and the VMC/CMC
   certificate are not downloaded or validated.
@@ -300,7 +302,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Roadmap
 
-- Probing a list of common DKIM selectors (opt-in).
 - NSEC/NSEC3 checks (RFC 9276 parameters, zone walking).
 - Download and validate the MTA-STS policy file.
 - Optional API token authentication.
