@@ -32,6 +32,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 class AnalysisRequest(BaseModel):
     domain: str = Field(..., max_length=300)
     dkim_selectors: list[str] = Field(default_factory=list, max_length=MAX_SELECTORS)
+    probe_dkim: bool = False
 
     @field_validator("domain")
     @classmethod
@@ -133,7 +134,7 @@ def create_app(
 
     @app.post("/api/analyses", status_code=201, dependencies=limited)
     def create_analysis(body: AnalysisRequest) -> dict:
-        report = analyze(engine, body.domain, body.dkim_selectors)
+        report = analyze(engine, body.domain, body.dkim_selectors, body.probe_dkim)
         return {"id": storage.save(report), **report}
 
     @app.get("/api/analyses")

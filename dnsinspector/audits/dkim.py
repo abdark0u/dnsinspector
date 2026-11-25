@@ -12,6 +12,19 @@ from dnsinspector.findings import Finding, Severity
 
 REF = "RFC 6376 section 3.6.1"
 CATEGORY = "Email security / DKIM"
+# selectores comunes de los proveedores mas usados (maximo 10 consultas)
+COMMON_SELECTORS = [
+    "default",
+    "google",
+    "selector1",
+    "selector2",
+    "k1",
+    "s1",
+    "s2",
+    "dkim",
+    "mail",
+    "smtp",
+]
 NOTE = (
     "Only the public key record is checked. A valid DKIM signature can only be confirmed by "
     "verifying a real signed message."
@@ -56,9 +69,11 @@ def check_key_record(record: str) -> dict:
     return info
 
 
-def audit_dkim(engine: DnsEngine, domain: str, selectors: list[str]) -> tuple[dict, list[Finding]]:
+def audit_dkim(
+    engine: DnsEngine, domain: str, selectors: list[str], probe: bool = False
+) -> tuple[dict, list[Finding]]:
     findings: list[Finding] = []
-    if not selectors:
+    if not selectors and not probe:
         findings.append(
             Finding(
                 "DKIM-001",
@@ -76,10 +91,17 @@ def audit_dkim(engine: DnsEngine, domain: str, selectors: list[str]) -> tuple[di
         return {"status": "not_checked", "selectors": [], "note": NOTE}, findings
 
     results = []
-    for selector in selectors:
+    # los selectores probados solo se muestran si existen (un fallo no es un hallazgo)
+    probed = [s for s in COMMON_SELECTORS if s not in selectors] if probe else []
+    for selector in [*selectors, *probed]:
+        is_probe = selector in probed
         name = f"{selector}._domainkey.{domain}"
         query = engine.query(name, "TXT")
         entry: dict = {"selector": selector, "name": name, "dns_status": query.status}
+        if is_probe:
+            entry["probed"] = True
+        if is_probe and not any("p=" in r or r.startswith("v=DKIM1") for r in query.records):
+            continue
         results.append(entry)
         if query.status not in (OK, NODATA, NXDOMAIN):
             entry["status"] = "error"
@@ -104,11 +126,29 @@ def audit_dkim(engine: DnsEngine, domain: str, selectors: list[str]) -> tuple[di
         entry["record"] = keys[0]
         entry.update(check_key_record(keys[0]))
         entry["status"] = _key_findings(entry, findings)
+    if probe and not results:
+        findings.append(
+            Finding(
+                "DKIM-008",
+                Severity.INFO,
+                "No DKIM key found among common selectors",
+                f"{len(probed)} common selectors were probed and none has a key record. The "
+                "domain may use a custom selector.",
+                "Probed: " + ", ".join(probed),
+                "Find the selector in the 'DKIM-Signature: s=' header of a sent email.",
+                CATEGORY,
+                REF,
+            )
+        )
+        return {"status": "not_found", "selectors": [], "probed": probed, "note": NOTE}, findings
     statuses = {r["status"] for r in results}
     overall = next(
         (s for s in ("invalid", "missing", "error", "weak", "revoked") if s in statuses), "ok"
     )
-    return {"status": overall, "selectors": results, "note": NOTE}, findings
+    out = {"status": overall, "selectors": results, "note": NOTE}
+    if probe:
+        out["probed"] = probed
+    return out, findings
 
 
 def _key_findings(entry: dict, findings: list[Finding]) -> str:

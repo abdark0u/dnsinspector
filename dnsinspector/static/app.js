@@ -92,7 +92,7 @@ $("#analyze-form").addEventListener("submit", async (event) => {
   try {
     const report = await api("/api/analyses", {
       method: "POST",
-      body: JSON.stringify({ domain, dkim_selectors: selectors }),
+      body: JSON.stringify({ domain, dkim_selectors: selectors, probe_dkim: $("#analyze-probe").checked }),
     });
     $("#analysis-result").innerHTML = renderReport(report);
     bindReportActions($("#analysis-result"));
@@ -152,10 +152,12 @@ function spfDetail(spf) {
 }
 
 function dkimDetail(dkim) {
+  if (dkim?.status === "not_found") return "No key found among common selectors";
   if (!dkim?.selectors?.length) return "No selector given. DKIM keys cannot be discovered via DNS.";
   return dkim.selectors.map((s) => {
     const key = s.key_bits ? `${s.key_type?.toUpperCase()} ${s.key_bits}-bit` : s.status;
-    return `<code>${esc(s.selector)}</code>: ${esc(key)}`;
+    const tag = s.probed ? " (found by probing)" : "";
+    return `<code>${esc(s.selector)}</code>: ${esc(key)}${esc(tag)}`;
   }).join("<br>");
 }
 

@@ -85,3 +85,30 @@ def test_invalid_key_and_test_mode():
 def test_test_mode_flag():
     _, findings = run(f"v=DKIM1; t=y; p={rsa_p(2048).decode()}")
     assert [f.id for f in findings] == ["DKIM-007"]
+
+
+def test_probe_reports_only_existing_selectors():
+    data = {("example.com", "A"): ["192.0.2.1"]}
+    data[("google._domainkey.example.com", "TXT")] = [
+        txt("v=DKIM1; k=rsa; p=" + rsa_p(2048).decode())
+    ]
+    resolver = FakeResolver(data)
+    status, findings = audit_dkim(DnsEngine(resolver=resolver), "example.com", [], probe=True)
+    assert [s["selector"] for s in status["selectors"]] == ["google"]
+    assert status["selectors"][0]["probed"] is True
+    assert findings == []
+    probes = [c for c in resolver.calls if "_domainkey" in c[0]]
+    assert len(probes) == 10
+
+
+def test_probe_nothing_found_and_no_duplicate_queries():
+    resolver = FakeResolver({("example.com", "A"): ["192.0.2.1"]})
+    status, findings = audit_dkim(
+        DnsEngine(resolver=resolver), "example.com", ["google"], probe=True
+    )
+    # google lo pidio el usuario: da DKIM-002 y no se prueba otra vez
+    assert [f.id for f in findings] == ["DKIM-002"]
+    assert len([c for c in resolver.calls if c[0].startswith("google._domainkey")]) == 1
+    status, findings = audit_dkim(DnsEngine(resolver=resolver), "example.com", [], probe=True)
+    assert status["status"] == "not_found"
+    assert [f.id for f in findings] == ["DKIM-008"]

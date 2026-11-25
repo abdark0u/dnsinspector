@@ -20,7 +20,12 @@ logger = logging.getLogger(__name__)
 MAX_SELECTORS = 5
 
 
-def analyze(engine: DnsEngine, domain: str, selectors: list[str] | None = None) -> dict:
+def analyze(
+    engine: DnsEngine,
+    domain: str,
+    selectors: list[str] | None = None,
+    probe_dkim: bool = False,
+) -> dict:
     """Recibe un dominio ya validado y devuelve el informe como dict (listo para JSON)."""
     started = datetime.now(UTC)
     start = time.perf_counter()
@@ -65,7 +70,7 @@ def analyze(engine: DnsEngine, domain: str, selectors: list[str] | None = None) 
         for key, audit in (
             ("nameservers", lambda: audit_nameservers(engine, domain, records["NS"])),
             ("spf", lambda: audit_spf(engine, domain)),
-            ("dkim", lambda: audit_dkim(engine, domain, selectors)),
+            ("dkim", lambda: audit_dkim(engine, domain, selectors, probe_dkim)),
             ("dmarc", lambda: audit_dmarc(engine, domain)),
             ("dnssec", lambda: audit_dnssec(engine, domain)),
             ("mta_sts", lambda: audit_mta_sts(engine, domain, records["MX"])),

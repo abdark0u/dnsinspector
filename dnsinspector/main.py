@@ -43,7 +43,7 @@ def check(args: argparse.Namespace, engine: DnsEngine | None = None) -> int:
     except ValidationError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
-    report = analyze(engine or DnsEngine(), domain, selectors)
+    report = analyze(engine or DnsEngine(), domain, selectors, args.probe_dkim)
     print(to_json(report).decode() if args.json else format_text(report))
     if args.fail_on:
         # severidades desde la mas grave hasta la elegida
@@ -65,6 +65,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         default=[],
         help=f"DKIM selector, can be repeated (max {MAX_SELECTORS})",
+    )
+    check_cmd.add_argument(
+        "--probe-dkim",
+        action="store_true",
+        help="also probe 10 common DKIM selectors (10 extra DNS queries)",
     )
     check_cmd.add_argument("--json", action="store_true", help="print the full JSON report")
     check_cmd.add_argument(

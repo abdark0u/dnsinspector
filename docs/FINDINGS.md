@@ -53,6 +53,7 @@ so the same configuration always gets the same result.
 | DKIM-005 | High | RSA key under 1024 bits |
 | DKIM-006 | Low | RSA key under 2048 bits |
 | DKIM-007 | Low | Selector in test mode (`t=y`) |
+| DKIM-008 | Info | Probing common selectors found no key record |
 | DMARC-000 | Info | DMARC could not be checked |
 | DMARC-001 | High | No DMARC record |
 | DMARC-002 | High | Multiple DMARC records |
@@ -86,7 +87,7 @@ so the same configuration always gets the same result.
 |---|---|
 | Name servers | `ok`, `inconsistent`, `lame`, `unreachable`, `not_checked`, `skipped` |
 | SPF | `ok`, `weak`, `invalid`, `missing`, `error`, `skipped` |
-| DKIM | `ok`, `weak`, `invalid`, `missing`, `revoked`, `not_checked`, `error`, `skipped` |
+| DKIM | `ok`, `weak`, `invalid`, `missing`, `revoked`, `not_checked`, `not_found`, `error`, `skipped` |
 | DMARC | `ok`, `weak`, `invalid`, `missing`, `error`, `skipped` |
 | DNSSEC | `signed`, `unsigned`, `no_chain`, `broken`, `error`, `skipped` |
 | MTA-STS | `ok`, `invalid`, `missing`, `not_applicable`, `error`, `skipped` |
