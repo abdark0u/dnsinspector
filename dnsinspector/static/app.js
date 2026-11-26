@@ -175,6 +175,9 @@ function dnssecDetail(dnssec) {
   const parts = [`DS: ${dnssec.ds?.length ?? 0}`, `DNSKEY: ${dnssec.dnskey?.length ?? 0}`];
   if (v) parts.push(v.ds_matches_dnskey && v.dnskey_signature_valid ? "DS↔DNSKEY verified" : "verification failed");
   parts.push(`AD=${dnssec.ad_flag ? 1 : 0}`);
+  const d = dnssec.denial;
+  if (d?.type === "NSEC3") parts.push(`NSEC3 it=${d.iterations}${d.salt ? " salted" : ""}`);
+  else if (d?.type) parts.push(d.type);
   return esc(parts.join(" · "));
 }
 

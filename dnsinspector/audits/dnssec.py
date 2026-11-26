@@ -5,10 +5,13 @@ y que la firma (RRSIG) del conjunto DNSKEY sea valida. Ademas validamos la caden
 confianza desde la raiz (ancla de confianza -> TLD -> dominio).
 """
 
+import secrets
+
 import dns.dnssec
 import dns.exception
 import dns.name
 import dns.rdata
+import dns.rdatatype
 import dns.rrset
 
 from dnsinspector.dns_engine import NODATA, NXDOMAIN, OK, DnsEngine, QueryResult
@@ -156,6 +159,7 @@ def audit_dnssec(
         "dnskey": [_key_info(r) for r in dnskey.rrset] if dnskey.rrset else [],
         "ad_flag": dnskey.ad_flag,
         "validation": None,
+        "denial": None,
         "note": NOTE,
     }
     findings: list[Finding] = []
@@ -229,6 +233,10 @@ def audit_dnssec(
             status["status"] = "broken"
             findings.append(_chain_broken(domain, chain["error"]))
 
+    if status["status"] == "signed":
+        status["denial"], denial_findings = audit_denial(engine, domain)
+        findings += denial_findings
+
     algorithms = {k["algorithm_number"]: k["algorithm"] for k in status["dnskey"]}
     deprecated = sorted(name for num, name in algorithms.items() if num in DEPRECATED_ALGORITHMS)
     if deprecated:
@@ -272,6 +280,69 @@ def audit_dnssec(
             )
         )
     return status, findings
+
+
+def audit_denial(engine: DnsEngine, domain: str) -> tuple[dict, list[Finding]]:
+    """Mira NSEC/NSEC3 con una sola consulta a un nombre aleatorio que no existe."""
+    probe = f"_dnsinspector-{secrets.token_hex(6)}.{domain}"
+    records = engine.query_denial(probe)
+    info: dict = {"type": None, "iterations": None, "salt": None}
+    findings: list[Finding] = []
+    nsec3 = [r for rrset in records if rrset.rdtype == dns.rdatatype.NSEC3 for r in rrset]
+    if nsec3:
+        info.update(type="NSEC3", iterations=nsec3[0].iterations, salt=nsec3[0].salt.hex())
+        iterations = max(r.iterations for r in nsec3)
+        salted = any(r.salt for r in nsec3)
+        if iterations > 0:
+            # mas de 150 iteraciones: muchos resolvers lo tratan como inseguro (RFC 9276)
+            severity = Severity.MEDIUM if iterations > 150 else Severity.LOW
+            findings.append(
+                Finding(
+                    "DNSSEC-009",
+                    severity,
+                    "NSEC3 uses additional hash iterations",
+                    "RFC 9276 says the iteration count MUST be 0: extra iterations only cost "
+                    "CPU and resolvers may treat zones with more than 150 as insecure.",
+                    f"{domain}: NSEC3 iterations = {iterations}",
+                    "Re-sign the zone with NSEC3 iterations set to 0.",
+                    CATEGORY,
+                    "RFC 9276 section 3.1",
+                )
+            )
+        if salted:
+            findings.append(
+                Finding(
+                    "DNSSEC-010",
+                    Severity.LOW,
+                    "NSEC3 uses a salt",
+                    "RFC 9276 recommends an empty salt: it adds no real protection and "
+                    "makes key and salt rollovers harder.",
+                    f"{domain}: NSEC3 salt = {info['salt']}",
+                    "Re-sign the zone with an empty NSEC3 salt.",
+                    CATEGORY,
+                    "RFC 9276 section 3.1",
+                )
+            )
+    elif records:
+        info["type"] = "NSEC"
+        # si el NSEC es del propio nombre pedido es una "mentira blanca": no se puede recorrer
+        walkable = any(str(r.name).lower() != probe.lower() + "." for r in records)
+        findings += [_nsec_walking(domain)] if walkable else []
+    return info, findings
+
+
+def _nsec_walking(domain: str) -> Finding:
+    return Finding(
+        "DNSSEC-011",
+        Severity.LOW,
+        "Zone uses NSEC (names can be enumerated)",
+        "NSEC records link each name to the next one, so anyone can walk the zone "
+        "and list every name in it.",
+        f"{domain}: NSEC records returned for a non-existent name",
+        "Switch to NSEC3 (iterations 0) or NSEC white lies if the names are sensitive.",
+        CATEGORY,
+        "RFC 4035 section 5.2 and RFC 9276",
+    )
 
 
 def _broken(domain: str, evidence: str) -> Finding:

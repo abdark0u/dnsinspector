@@ -106,6 +106,18 @@ class DnsEngine:
         logger.debug("query %s %s -> %s", name, rtype, result.status)
         return result
 
+    def query_denial(self, name: str) -> list[Any]:
+        """Pide un nombre que no existe y devuelve los NSEC/NSEC3 de la respuesta."""
+        kinds = (dns.rdatatype.NSEC, dns.rdatatype.NSEC3)
+        try:
+            # algunos servidores (p. ej. Cloudflare) contestan NODATA en vez de NXDOMAIN
+            response = self.resolver.resolve(name, "A", raise_on_no_answer=False).response
+        except dns.resolver.NXDOMAIN as exc:
+            response = next(iter(exc.responses().values()), None)
+        except dns.exception.DNSException:
+            return []
+        return [r for r in response.authority if r.rdtype in kinds] if response else []
+
     def query_authoritative(self, ip: str, name: str) -> dict:
         """Pregunta el SOA directamente a un servidor autoritativo (sin recursion)."""
         query = dns.message.make_query(name, "SOA")

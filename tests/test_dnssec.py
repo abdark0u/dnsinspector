@@ -182,3 +182,45 @@ def test_chain_incomplete_does_not_add_finding():
     status, findings = run({("example.com", "DNSKEY"): keys, ("example.com", "DS"): ds}, ad=True)
     assert status["validation"]["chain"]["status"] == "incomplete"
     assert findings == []
+
+
+def signed_run(denial):
+    keys, ds = signed_zone()
+    data = {("example.com", "A"): ["192.0.2.1"], ("example.com", "DNSKEY"): keys}
+    data[("example.com", "DS")] = ds
+    resolver = FakeResolver(data)
+    resolver.denial = denial
+    return audit_dnssec(DnsEngine(resolver=resolver), "example.com")
+
+
+def nsec3_rrset(iterations, salt):
+    text = f"1 0 {iterations} {salt} 2T7B4G4VSA5SMI47K61MV5BV1A22BOJR A RRSIG"
+    return [dns.rrset.from_text("hash.example.com", 300, "IN", "NSEC3", text)]
+
+
+def test_nsec3_good_parameters():
+    status, findings = signed_run(nsec3_rrset(0, "-"))
+    assert status["denial"]["type"] == "NSEC3"
+    assert "DNSSEC-009" not in ids(findings) and "DNSSEC-010" not in ids(findings)
+
+
+def test_nsec3_iterations_and_salt():
+    status, findings = signed_run(nsec3_rrset(10, "AABB"))
+    assert {"DNSSEC-009", "DNSSEC-010"} <= ids(findings)
+    assert status["denial"]["salt"] == "aabb"
+    sev = {f.id: f.severity.name for f in findings}
+    assert sev["DNSSEC-009"] == "LOW"
+    _, findings = signed_run(nsec3_rrset(200, "-"))
+    assert {f.id: f.severity.name for f in findings}["DNSSEC-009"] == "MEDIUM"
+
+
+def test_nsec_zone_walking():
+    nsec = [dns.rrset.from_text("example.com", 300, "IN", "NSEC", "a.example.com. A RRSIG NSEC")]
+    status, findings = signed_run(nsec)
+    assert status["denial"]["type"] == "NSEC"
+    assert "DNSSEC-011" in ids(findings)
+
+
+def test_denial_not_checked_when_unsigned():
+    status, _ = run({})
+    assert status["denial"] is None
