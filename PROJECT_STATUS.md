@@ -1,6 +1,6 @@
 # Project status
 
-_Last updated: 2026-11-25_
+_Last updated: 2026-11-26_
 
 ## Current phase
 
@@ -58,7 +58,7 @@ Each stage ends with tests passing, a CHANGELOG entry and a push.
 | 8 | SPF void lookup limit (more than 2 lookups returning NXDOMAIN/NODATA = permerror) | **Done 2026-11-23**: SPF-014, `tests/test_spf.py` |
 | 9 | IPv6 (AAAA) addresses in authoritative name server checks **Done 2026-11-24**: `tests/test_nameservers.py`, IPv6 rows in the name server table |
 | 10 | Opt-in probing of common DKIM selectors (fixed list, max 10 queries) | **Done 2026-11-25**: `tests/test_dkim.py`, API flag, UI checkbox, CLI `--probe-dkim` |
-| 11 | NSEC/NSEC3 checks (NSEC3 iterations and salt per RFC 9276, NSEC zone walking) | New DNSSEC findings; tests with signed fake denial responses |
+| 11 | NSEC/NSEC3 checks (NSEC3 iterations and salt per RFC 9276, NSEC zone walking) **Done 2026-11-26**: DNSSEC-009/010/011, `tests/test_dnssec.py` |
 | 12 | Download and validate the MTA-STS policy file (HTTPS, public IPs only, timeout, size cap, no redirects) | Policy mode/mx/max_age checked against MX; tests with a fake fetcher |
 | 13 | Optional API token authentication (`DNSINSPECTOR_TOKEN`) | 401 without token when set; frontend asks for it; tests |
 | 14 | Release v0.3.0 | Tag, GitHub release, CI green |

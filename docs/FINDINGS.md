@@ -72,6 +72,9 @@ so the same configuration always gets the same result.
 | DNSSEC-006 | Low | Only SHA-1 DS digests |
 | DNSSEC-008 | High | Chain of trust does not validate up to the root (RFC 4035) |
 | DNSSEC-007 | Info | Resolver did not set the AD flag |
+| DNSSEC-009 | Low / Medium | NSEC3 iterations above 0 (Medium above 150) (RFC 9276) |
+| DNSSEC-010 | Low | NSEC3 uses a salt (RFC 9276) |
+| DNSSEC-011 | Low | Zone uses NSEC, names can be enumerated (zone walking) |
 | MTASTS-001 | Low | No MTA-STS policy record (domain receives mail) |
 | MTASTS-002 | Low | Invalid or duplicate MTA-STS record |
 | TLSRPT-001 | Low / Info | No TLS-RPT record (Low when MTA-STS is published, Info otherwise) |

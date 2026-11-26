@@ -14,6 +14,8 @@ All notable changes to this project are documented here. The format follows
 - SPF void lookup limit (RFC 7208 section 4.6.4): more than 2 `a`, `mx`, `exists`, `include`
   or `redirect` lookups returning NXDOMAIN or an empty answer raise SPF-014 and mark the
   record invalid.
+- NSEC/NSEC3 checks for signed zones using one query for a random non-existent name:
+  NSEC3 iterations/salt per RFC 9276 (DNSSEC-009/010) and NSEC zone walking (DNSSEC-011).
 - BIMI record check (`default._bimi`): syntax, certificate presence and whether DMARC is
   enforced enough for the logo to be shown (BIMI-001 to BIMI-004). New dashboard card,
   PDF row and CLI line.

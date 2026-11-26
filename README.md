@@ -57,6 +57,9 @@ recursive resolver. No port scans, no zone transfers, no access to private netwo
   the DNSKEY RRset signature (RRSIG) is valid.
 - Validates the **whole chain of trust** from the IANA root trust anchors (root -> TLD ->
   domain), checking every DS and DNSKEY RRset signature (DNSSEC-008 when it breaks).
+- For signed zones, sends one extra query for a random non-existent name to inspect the
+  denial of existence: NSEC3 iterations and salt (RFC 9276, DNSSEC-009/010) and NSEC zone
+  walking (DNSSEC-011). The NSEC/NSEC3 signatures themselves are not validated.
 - Reports the resolver's AD (Authenticated Data) flag separately, and flags deprecated
   algorithms and SHA-1-only DS digests.
 - Clearly separates "DNSSEC present" from "verified" and documents what is not verified
@@ -302,7 +305,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Roadmap
 
-- NSEC/NSEC3 checks (RFC 9276 parameters, zone walking).
 - Download and validate the MTA-STS policy file.
 - Optional API token authentication.
 - Validate the BIMI logo and certificate.
