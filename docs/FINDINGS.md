@@ -77,6 +77,11 @@ so the same configuration always gets the same result.
 | DNSSEC-011 | Low | Zone uses NSEC, names can be enumerated (zone walking) |
 | MTASTS-001 | Low | No MTA-STS policy record (domain receives mail) |
 | MTASTS-002 | Low | Invalid or duplicate MTA-STS record |
+| MTASTS-003 | Medium | MTA-STS policy file cannot be downloaded |
+| MTASTS-004 | Medium | Invalid MTA-STS policy file |
+| MTASTS-005 | High / Low | MX hosts not covered by the policy (High in enforce mode, Low otherwise) |
+| MTASTS-006 | Low / Medium | Policy mode is testing (Low) or none (Medium) |
+| MTASTS-007 | Low | `max_age` under one day |
 | TLSRPT-001 | Low / Info | No TLS-RPT record (Low when MTA-STS is published, Info otherwise) |
 | TLSRPT-002 | Low | Invalid or duplicate TLS-RPT record |
 | BIMI-001 | Info | No BIMI record although DMARC is already enforced |

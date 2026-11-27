@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- MTA-STS policy file download and validation (HTTPS only, public IPs only, timeout, size
+  cap, no redirects): mode, `max_age` and MX coverage (MTASTS-003 to MTASTS-007).
 - Opt-in probing of 10 common DKIM selectors (`--probe-dkim`, `probe_dkim` in the API, UI
   checkbox). Only existing keys are reported; DKIM-008 when none is found.
 - IPv6 (AAAA) addresses of the authoritative name servers are now queried too (up to 2 IPv4

@@ -45,6 +45,9 @@ recursive resolver. No port scans, no zone transfers, no access to private netwo
 - Checks the `_mta-sts` TXT record (RFC 8461: `v=STSv1`, `id`) and the `_smtp._tls`
   TLS-RPT record (RFC 8460: `v=TLSRPTv1`, `rua` with `mailto:`/`https:` URIs),
   including duplicates and syntax errors.
+- If the record is valid, downloads the policy from `https://mta-sts.<domain>/.well-known/mta-sts.txt`
+  (HTTPS only, public IPs only, 5 s timeout, 64 KiB cap, redirects not followed) and checks
+  `version`, `mode`, `max_age` and that every MX host matches an `mx` line.
 
 **BIMI** (only for domains with MX records)
 - Checks the `default._bimi` TXT record (`v=BIMI1`, `l=` https SVG logo, `a=` certificate)
@@ -271,8 +274,8 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
   a real signed message.
 - **BIMI**: only the `default` selector record is checked; the SVG logo and the VMC/CMC
   certificate are not downloaded or validated.
-- **MTA-STS**: only the DNS record is checked; the policy file served over HTTPS at
-  `mta-sts.<domain>` is not downloaded, so its mode and MX patterns are not verified.
+- **MTA-STS**: the policy is fetched from the first public IP that answers; the
+  certificate is verified by the standard library but its expiry is not reported separately.
 - **DMARC** organizational domain uses the Public Suffix List bundled with the
   `publicsuffix2` package, which can be slightly out of date. External report
   destination authorization (RFC 7489 section 7.1) is not checked.
@@ -305,7 +308,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Roadmap
 
-- Download and validate the MTA-STS policy file.
 - Optional API token authentication.
 - Validate the BIMI logo and certificate.
 
