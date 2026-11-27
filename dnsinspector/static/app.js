@@ -185,7 +185,8 @@ function mtaStsDetail(m) {
   if (m.status === "not_applicable") return "Domain has no MX records";
   if (m.status === "skipped") return "-";
   const id = m.mta_sts?.tags?.id ? `id=${m.mta_sts.tags.id}` : "no policy record";
-  return `<code>${esc(id)}</code> · TLS-RPT: ${esc(m.tls_rpt?.status || "-")}`;
+  const pol = m.policy ? ` · policy: ${esc(m.policy.policy?.mode || m.policy.status)}` : "";
+  return `<code>${esc(id)}</code>${pol} · TLS-RPT: ${esc(m.tls_rpt?.status || "-")}`;
 }
 
 function bimiDetail(b) {

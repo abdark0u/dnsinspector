@@ -9,7 +9,7 @@ from dnsinspector.audits.bimi import audit_bimi
 from dnsinspector.audits.dkim import audit_dkim
 from dnsinspector.audits.dmarc import audit_dmarc
 from dnsinspector.audits.dnssec import audit_dnssec
-from dnsinspector.audits.mta_sts import audit_mta_sts
+from dnsinspector.audits.mta_sts import audit_mta_sts, fetch_policy
 from dnsinspector.audits.nameservers import audit_nameservers
 from dnsinspector.audits.records import audit_records, domain_exists
 from dnsinspector.audits.spf import audit_spf
@@ -25,6 +25,7 @@ def analyze(
     domain: str,
     selectors: list[str] | None = None,
     probe_dkim: bool = False,
+    policy_fetcher=fetch_policy,
 ) -> dict:
     """Recibe un dominio ya validado y devuelve el informe como dict (listo para JSON)."""
     started = datetime.now(UTC)
@@ -73,7 +74,7 @@ def analyze(
             ("dkim", lambda: audit_dkim(engine, domain, selectors, probe_dkim)),
             ("dmarc", lambda: audit_dmarc(engine, domain)),
             ("dnssec", lambda: audit_dnssec(engine, domain)),
-            ("mta_sts", lambda: audit_mta_sts(engine, domain, records["MX"])),
+            ("mta_sts", lambda: audit_mta_sts(engine, domain, records["MX"], policy_fetcher)),
             # va despues de dmarc porque usa su resultado
             ("bimi", lambda: audit_bimi(engine, domain, records["MX"], report["dmarc"])),
         ):
