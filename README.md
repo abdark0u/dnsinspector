@@ -157,6 +157,7 @@ Open http://127.0.0.1:8000. Interactive API docs are at http://127.0.0.1:8000/ap
 | `DNS_NAMESERVERS` | system resolvers | Comma-separated resolver IPs, e.g. `1.1.1.1,8.8.8.8`. Use a validating resolver to get a meaningful AD flag. |
 | `DNS_TIMEOUT` | `3` | Maximum seconds per DNS query |
 | `DATABASE_PATH` | `data/dnsinspector.db` | SQLite file (created automatically) |
+| `DNSINSPECTOR_TOKEN` | empty | If set, every `/api/*` call except `/api/health` and `/api/docs` needs `Authorization: Bearer <token>` (the dashboard asks for it). Empty keeps the API open |
 | `RATE_LIMIT_PER_MINUTE` | `30` | Lookup/analysis requests per client IP per minute (`0` disables) |
 | `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 | `HOST` / `PORT` | `127.0.0.1` / `8000` | Listen address (Docker uses `0.0.0.0`) |
@@ -287,8 +288,9 @@ starts it with Compose and runs a real analysis plus a PDF download against it.
 - The rate limiter is in-memory and per process. Run a single worker, or rate-limit at a
   reverse proxy.
 - PDF reports use the built-in PDF fonts (Latin-1); other characters are replaced by `?`.
-- There is no authentication: anyone who can reach the app can see and delete the
-  history. Keep it on localhost or behind an authenticating proxy.
+- Authentication is a single optional shared token (`DNSINSPECTOR_TOKEN`); there are no
+  users or roles. Without it, anyone who can reach the app can see and delete the history,
+  so keep it on localhost or behind an authenticating proxy. Use HTTPS when exposing it.
 
 ## Security considerations
 
@@ -308,7 +310,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## Roadmap
 
-- Optional API token authentication.
 - Validate the BIMI logo and certificate.
 
 ## License

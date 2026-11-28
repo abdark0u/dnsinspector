@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- Optional API token authentication via `DNSINSPECTOR_TOKEN` (Bearer token, constant-time
+  compare, 401 otherwise); the dashboard asks for the token in a dialog.
 - MTA-STS policy file download and validation (HTTPS only, public IPs only, timeout, size
   cap, no redirects): mode, `max_age` and MX coverage (MTASTS-003 to MTASTS-007).
 - Opt-in probing of 10 common DKIM selectors (`--probe-dkim`, `probe_dkim` in the API, UI
