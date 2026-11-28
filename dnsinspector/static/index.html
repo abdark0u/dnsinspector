@@ -80,6 +80,14 @@
     <section id="view-detail" class="view" hidden></section>
   </main>
 
+  <dialog id="token-dialog">
+    <form method="dialog" id="token-form">
+      <label for="token-input">This server requires an API token</label>
+      <input id="token-input" type="password" autocomplete="off" required>
+      <button class="btn primary" type="submit">Continue</button>
+      <button class="btn" type="button" id="token-cancel">Cancel</button>
+    </form>
+  </dialog>
   <footer class="footer">
     Non-intrusive DNS diagnostics. Only public DNS data is queried.
   </footer>

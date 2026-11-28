@@ -22,3 +22,5 @@ class Settings:
         default_factory=lambda: int(os.getenv("RATE_LIMIT_PER_MINUTE", "30"))
     )
     log_level: str = field(default_factory=lambda: os.getenv("LOG_LEVEL", "INFO").upper())
+    # si esta vacio la API es abierta (comportamiento de siempre)
+    api_token: str = field(default_factory=lambda: os.getenv("DNSINSPECTOR_TOKEN", ""))

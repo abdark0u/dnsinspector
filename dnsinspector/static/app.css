@@ -206,3 +206,7 @@ tr.clickable:hover td { background: var(--panel-2); }
   .toolbar .btn { width: 100%; }
   .finding summary .cat { display: none; }
 }
+
+dialog { background: var(--panel, #161b22); color: inherit; border: 1px solid var(--muted); border-radius: 8px; padding: 16px; }
+dialog form { display: flex; flex-direction: column; gap: 10px; }
+dialog::backdrop { background: rgba(0, 0, 0, .6); }

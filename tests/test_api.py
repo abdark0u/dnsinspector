@@ -126,3 +126,19 @@ def test_timeout_is_returned_as_status(tmp_path):
     client = make_client(tmp_path, data={("slow.com", "A"): dns.exception.Timeout})
     data = client.get("/api/lookup", params={"name": "slow.com", "type": "A"}).json()
     assert data["results"][0]["status"] == "timeout"
+
+
+def test_token_auth(tmp_path):
+    settings = Settings(database_path=tmp_path / "t.db", api_token="s3cret")
+    engine = DnsEngine(resolver=FakeResolver(ZONE))
+    c = TestClient(create_app(settings, engine=engine, storage=Storage(settings.database_path)))
+    assert c.get("/api/health").status_code == 200
+    assert c.get("/").status_code == 200
+    assert c.get("/api/analyses").status_code == 401
+    assert c.get("/api/analyses", headers={"Authorization": "Bearer nope"}).status_code == 401
+    ok = c.get("/api/analyses", headers={"Authorization": "Bearer s3cret"})
+    assert ok.status_code == 200
+
+
+def test_no_token_stays_open(client):
+    assert client.get("/api/analyses").status_code == 200

@@ -1,5 +1,6 @@
 """API REST con FastAPI y el frontend estatico."""
 
+import hmac
 import logging
 import threading
 import time
@@ -8,6 +9,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
@@ -91,9 +93,25 @@ def create_app(
 
     app = FastAPI(title="DNSInspector", version=__version__, docs_url="/api/docs")
 
+    def _needs_token(path: str) -> bool:
+        # solo protegemos la API; health y el swagger quedan abiertos
+        open_paths = ("/api/health", "/api/docs")
+        return bool(settings.api_token) and path.startswith("/api/") and path not in open_paths
+
+    def _token_ok(request: Request) -> bool:
+        sent = request.headers.get("authorization", "").removeprefix("Bearer ")
+        return hmac.compare_digest(sent.encode(), settings.api_token.encode())
+
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
-        response = await call_next(request)
+        if _needs_token(request.url.path) and not _token_ok(request):
+            response = JSONResponse(
+                {"detail": "Missing or invalid API token"},
+                status_code=401,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        else:
+            response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
         if not request.url.path.startswith("/api/docs"):

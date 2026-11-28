@@ -13,11 +13,53 @@ function esc(value) {
   })[c]);
 }
 
-async function api(path, options = {}) {
-  const response = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
+// token de la API (solo hace falta si el servidor tiene DNSINSPECTOR_TOKEN)
+async function authFetch(path, options = {}) {
+  const send = () => fetch(path, {
     ...options,
+    headers: { "Content-Type": "application/json", ...authHeader() },
   });
+  let response = await send();
+  if (response.status === 401) {
+    const token = await askToken();
+    if (token) {
+      sessionStorage.setItem("apiToken", token.trim());
+      response = await send();
+    }
+  }
+  return response;
+}
+
+// dialogo propio: window.prompt no funciona en todos los navegadores
+function askToken() {
+  const dialog = $("#token-dialog");
+  return new Promise((resolve) => {
+    dialog.addEventListener("close", () => resolve(dialog.returnValue === "ok" ? $("#token-input").value : ""), { once: true });
+    $("#token-cancel").onclick = () => dialog.close("cancel");
+    $("#token-form").onsubmit = () => { dialog.returnValue = "ok"; };
+    dialog.showModal();
+  });
+}
+
+function authHeader() {
+  const token = sessionStorage.getItem("apiToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// los enlaces de descarga no pueden llevar cabecera, asi que bajamos el fichero con fetch
+async function downloadReport(link) {
+  const response = await authFetch(link.dataset.download);
+  if (!response.ok) return;
+  const url = URL.createObjectURL(await response.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = link.dataset.filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function api(path, options = {}) {
+  const response = await authFetch(path, options);
   if (response.status === 204) return null;
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(errorMessage(response.status, data));
@@ -32,6 +74,14 @@ function errorMessage(status, data) {
   }
   return data.detail || `Request failed (HTTP ${status})`;
 }
+
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("a[data-download]");
+  if (link) {
+    e.preventDefault();
+    downloadReport(link);
+  }
+});
 
 function showError(id, message) {
   const el = $(id);
@@ -235,8 +285,8 @@ function renderReport(r) {
       </div>
     </div>
     <div class="actions">
-      <a class="btn small" href="/api/analyses/${id}/report.json" download>JSON</a>
-      <a class="btn small" href="/api/analyses/${id}/report.pdf" download>PDF</a>
+      <a class="btn small" href="#" data-download="/api/analyses/${id}/report.json" data-filename="dnsinspector-${id}.json">JSON</a>
+      <a class="btn small" href="#" data-download="/api/analyses/${id}/report.pdf" data-filename="dnsinspector-${id}.pdf">PDF</a>
       <button class="btn small danger" data-delete="${id}">Delete</button>
     </div>
   </div>
